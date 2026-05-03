@@ -112,11 +112,18 @@ bash "${INSTALL_DIR}/connectors/hermes/install.sh"
 if [ "$START_PET" -eq 1 ]; then
   "${BIN_DIR}/hermes-pet" --background --port "$PORT"
   if command -v curl >/dev/null 2>&1; then
-    health="$(curl -fsS "http://127.0.0.1:${PORT}/health")"
+    health=""
+    deadline=$((SECONDS + 25))
+    while [ "$SECONDS" -lt "$deadline" ]; do
+      if health="$(curl -fsS "http://127.0.0.1:${PORT}/health" 2>/dev/null)"; then
+        break
+      fi
+      sleep 0.5
+    done
     case "$health" in
       *'"name":"hermes-pet"'*|*'"name": "hermes-pet"'*) ;;
       *)
-        echo "Unexpected health response on port ${PORT}: ${health}" >&2
+        echo "Hermes Pet did not become healthy on port ${PORT}: ${health}" >&2
         exit 1
         ;;
     esac
