@@ -7,6 +7,8 @@ Taiei Hermes Pet is distributed as a removable Hermes Pet package. It installs a
 standalone `hermes-pet` command and a Hermes skill wrapper, without modifying
 the user's global `hermes` command or Hermes checkout.
 
+Languages: [English](README.md) | [한국어](README.ko.md) | [简体中文](README.zh.md) | [日本語](README.ja.md)
+
 ## Package
 
 The installable package is in `hermes-pet-macos/`.
