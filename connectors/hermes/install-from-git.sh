@@ -6,6 +6,8 @@ INSTALL_DIR="${HERMES_PET_INSTALL_DIR:-${HOME}/.hermes/pet/taiei-hermes-pet}"
 BRANCH="${HERMES_PET_BRANCH:-main}"
 PORT="${HERMES_PET_PORT:-8768}"
 START_PET=1
+BIN_DIR="${HERMES_PET_BIN_DIR:-${HOME}/.local/bin}"
+SKILL_DIR="${HERMES_PET_SKILL_DIR:-${HOME}/.hermes/skills/productivity/hermes-pet}"
 
 usage() {
   cat <<'EOF'
@@ -108,7 +110,7 @@ fi
 bash "${INSTALL_DIR}/connectors/hermes/install.sh"
 
 if [ "$START_PET" -eq 1 ]; then
-  "${HOME}/.local/bin/hermes-pet" --background --port "$PORT"
+  "${BIN_DIR}/hermes-pet" --background --port "$PORT"
   if command -v curl >/dev/null 2>&1; then
     health="$(curl -fsS "http://127.0.0.1:${PORT}/health")"
     case "$health" in
@@ -124,7 +126,7 @@ fi
 cat <<EOF
 Hermes Pet installed.
 Repository: ${INSTALL_DIR}
-Command: ${HOME}/.local/bin/hermes-pet
-Skill: ${HOME}/.hermes/skills/productivity/hermes-pet
+Command: ${BIN_DIR}/hermes-pet
+Skill: ${SKILL_DIR}
 Port: ${PORT}
 EOF
