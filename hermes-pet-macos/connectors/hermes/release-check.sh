@@ -28,16 +28,13 @@ run bash -n \
 PY_COMPILE_FILES=(
   hermes_pet/cli.py
   hermes_pet/protocol.py
-  hermes_cli/config.py
-  hermes_cli/env_loader.py
   hermes_cli/pet_protocol.py
   hermes_cli/pet_overlay.py
   hermes_cli/pet_sessions.py
   hermes_cli/pet_share.py
   hermes_constants.py
-  utils.py
 )
-for optional_py in hermes_cli/pet_forwarder.py hermes_cli/pet_telegram_relay.py; do
+for optional_py in hermes_cli/pet_forwarder.py; do
   if [ -f "$optional_py" ]; then
     PY_COMPILE_FILES+=("$optional_py")
   fi
@@ -50,8 +47,7 @@ if [ -d tests/hermes_cli ] && [ "${HERMES_PET_SKIP_TESTS:-0}" != "1" ]; then
     tests/hermes_cli/test_pet_sessions.py \
     tests/hermes_cli/test_pet_overlay.py \
     tests/hermes_cli/test_pet_forwarder.py \
-    tests/hermes_cli/test_pet_share.py \
-    tests/hermes_cli/test_pet_telegram_relay.py
+    tests/hermes_cli/test_pet_share.py
 
   run "$PYTHON" -m pytest -q -o addopts='' \
     tests/hermes_cli/test_web_server.py \
@@ -61,7 +57,7 @@ else
   echo "Skipping pytest; tests are not included in this lean distribution."
 fi
 
-PUBLIC_FORBIDDEN_PATTERN='Tailscale|tailscale|tailnet|--tailscale|Telegram|telegram|Discord|discord|remote-env|Remote Pets|private-network|chat-relay|relay setup|relay tools|--relay-test|relay-test|원격|リモート|远程'
+PUBLIC_FORBIDDEN_PATTERN='Tailscale|tailscale|tailnet|--tailscale|Telegram|telegram|Discord|discord|SSH|ssh|remote-env|Remote Pets|private-network|chat-relay|relay setup|relay tools|--relay-test|relay-test|원격|リモート|远程'
 PUBLIC_SURFACE_FILES=(
   README.md
   NOTICE.md

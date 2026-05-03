@@ -192,7 +192,6 @@ if [ "$PURGE_RUNTIME" -eq 1 ]; then
   safe_remove_runtime_entry "${RUNTIME_DIR}/pet_preferences.json"
   safe_remove_runtime_entry "${RUNTIME_DIR}/pet_relay_token"
   safe_remove_runtime_entry "${RUNTIME_DIR}/pet_cmux_sessions.json"
-  safe_remove_runtime_entry "${RUNTIME_DIR}/pet_telegram_relay.json"
   safe_remove_runtime_entry "${RUNTIME_DIR}/pet_share_sheet_converter"
 fi
 

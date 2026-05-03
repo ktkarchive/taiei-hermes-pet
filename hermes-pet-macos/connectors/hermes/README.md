@@ -17,13 +17,6 @@ in the default user path.
 - Install a standalone `hermes-pet` command that can run the pet workspace
   without repointing the user's global `hermes` command.
 
-## Current MVP Compatibility
-
-The repository still includes in-Hermes hooks used to prove the MVP behavior.
-Those hooks are treated as development shims. The productized Hermes connector
-should converge on wrappers and stable local environment contracts so Hermes can
-update without merge conflicts.
-
 ## Install
 
 One-command public install on macOS:
@@ -35,10 +28,10 @@ if [ -d "$INSTALL_DIR/.git" ]; then
 else
   git clone https://github.com/ktkarchive/taiei-hermes-pet.git "$INSTALL_DIR"
 fi
-bash "$INSTALL_DIR/connectors/hermes/install-from-git.sh"
+bash "$INSTALL_DIR/install.sh"
 ```
 
-From this repository:
+From the `hermes-pet-macos/` package directory:
 
 ```bash
 bash connectors/hermes/install.sh

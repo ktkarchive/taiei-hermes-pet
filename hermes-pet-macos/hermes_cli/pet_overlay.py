@@ -12,7 +12,6 @@ from __future__ import annotations
 import hmac
 import hashlib
 import html
-import ipaddress
 import json
 import locale
 import os
@@ -37,14 +36,13 @@ except Exception:  # Tk is only needed for the non-macOS development fallback.
     tk = None  # type: ignore[assignment]
     Menu = None  # type: ignore[assignment]
 
-from hermes_cli.config import get_hermes_home
+from hermes_constants import get_hermes_home
 from hermes_pet.protocol import (
     CMUX_SESSION_MAP_FILENAME,
     LOCAL_SOURCE_ID,
     PET_PREFERENCES_FILENAME,
     PET_RELAY_HEADER_NAME,
     PET_RELAY_TOKEN_ENV,
-    PET_TAILSCALE_IP_ENV,
     PROTOCOL_VERSION,
     RELAY_TOKEN_FILENAME,
     RUNTIME_FILENAME,
@@ -70,7 +68,6 @@ except Exception:  # Pillow is optional; the live Tk pet uses canvas primitives.
     ImageDraw = None  # type: ignore[assignment]
     ImageFilter = None  # type: ignore[assignment]
 
-TELEGRAM_RELAY_RUNTIME_FILENAME = "pet_telegram_relay.json"
 DEFAULT_LEFT_CLICK_OPENS_TERMINAL = False
 DEFAULT_SESSION_LIST_LIMIT = 5
 DEFAULT_TERMINAL_LAUNCHER = "macos"
@@ -82,7 +79,6 @@ SUPPORTED_TERMINAL_LAUNCHERS = frozenset({"macos", "cmux"})
 MAX_BODY_BYTES = 64 * 1024
 ASSET_DIR = Path(__file__).with_name("assets")
 DEFAULT_PET_PORT = 8768
-TAILSCALE_IPV4_NETWORK = ipaddress.ip_network("100.64.0.0/10")
 SPRITE_FILES = {
     "idle": "hermes_pet_idle.png",
     "blink": "hermes_pet_blink.png",
@@ -288,61 +284,6 @@ def resolve_relay_token(
     if use_token_file:
         return load_or_create_relay_token()
     return None
-
-
-def _validate_tailscale_ipv4(host: str) -> str:
-    try:
-        address = ipaddress.ip_address(host)
-    except ValueError as exc:
-        raise RuntimeError(f"{host!r} is not a valid IPv4 address") from exc
-    if address.version != 4:
-        raise RuntimeError(f"{host!r} is not an IPv4 address")
-    if address not in TAILSCALE_IPV4_NETWORK:
-        raise RuntimeError(
-            f"{host!r} is not in the Tailscale IPv4 range {TAILSCALE_IPV4_NETWORK}"
-        )
-    return str(address)
-
-
-def resolve_tailscale_host() -> str:
-    override = str(os.getenv(PET_TAILSCALE_IP_ENV) or "").strip()
-    if override:
-        return _validate_tailscale_ipv4(override)
-
-    commands = [
-        ["tailscale", "ip", "-4"],
-        ["/Applications/Tailscale.app/Contents/MacOS/Tailscale", "ip", "-4"],
-    ]
-    errors: list[str] = []
-    for command in commands:
-        try:
-            result = subprocess.run(
-                command,
-                capture_output=True,
-                text=True,
-                timeout=3,
-                check=False,
-            )
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            errors.append(f"{command[0]}: {exc}")
-            continue
-
-        if result.returncode != 0:
-            detail = (result.stderr or result.stdout or "").strip()
-            errors.append(f"{command[0]}: {detail or 'tailscale ip -4 failed'}")
-            continue
-
-        for line in result.stdout.splitlines():
-            host = line.strip()
-            if host:
-                try:
-                    return _validate_tailscale_ipv4(host)
-                except RuntimeError as exc:
-                    errors.append(f"{command[0]}: {exc}")
-                    continue
-        errors.append(f"{command[0]}: no IPv4 address")
-    detail = "; ".join(errors)
-    raise RuntimeError(detail or "tailscale ip -4 returned no IPv4 address")
 
 
 def _ensure_tk_library_paths() -> None:
@@ -1238,11 +1179,6 @@ def _connected_pet_modes(sessions: Optional[list[dict[str, Any]]] = None) -> lis
         mode = str(session.get("mode") or "").strip().lower()
         if mode:
             active.add(mode)
-    try:
-        if _telegram_relay_status().get("running"):
-            active.add("telegram")
-    except Exception:
-        pass
     return sorted(active)
 
 
@@ -1553,143 +1489,6 @@ def _launch_hermes_terminal(*, tui: bool) -> tuple[bool, str]:
                 return True, f"activated cmux for existing Hermes {mode.upper()}: {message}; {activate_message}"
         break
     return _launch_hermes_resume_terminal(tui=tui, session_id=None)
-
-
-def _telegram_relay_runtime_file() -> Path:
-    return get_hermes_home() / "runtime" / TELEGRAM_RELAY_RUNTIME_FILENAME
-
-
-def _telegram_relay_status() -> dict[str, Any]:
-    path = _telegram_relay_runtime_file()
-    try:
-        data = json.loads(path.read_text())
-    except Exception:
-        return {"running": False, "runtime_path": str(path)}
-    if not isinstance(data, dict):
-        return {"running": False, "runtime_path": str(path)}
-    pid = data.get("pid")
-    running = isinstance(pid, int) and _pid_alive(pid)
-    data["running"] = running
-    data["runtime_path"] = str(path)
-    return data
-
-
-def _write_telegram_relay_runtime(pid: int, log_path: Path) -> None:
-    path = _telegram_relay_runtime_file()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(
-        json.dumps(
-            {
-                "pid": pid,
-                "log_path": str(log_path),
-                "updated_at": time.time(),
-            },
-            indent=2,
-        )
-    )
-    tmp.replace(path)
-
-
-def _launch_hermes_telegram_relay() -> tuple[bool, str]:
-    bot_token = str(os.getenv("HERMES_TELEGRAM_BOT_TOKEN") or "").strip()
-    if not bot_token:
-        return False, "Telegram relay needs HERMES_TELEGRAM_BOT_TOKEN in the pet process environment"
-
-    existing = _telegram_relay_status()
-    if existing.get("running"):
-        return True, f"Telegram relay already running: pid={existing.get('pid')}"
-
-    log_dir = get_hermes_home() / "logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / "pet_telegram_relay.log"
-    args = [
-        str(_hermes_python_executable()),
-        "-m",
-        "hermes_pet.cli",
-        "--relay-telegram",
-    ]
-    chat_id = str(os.getenv("HERMES_TELEGRAM_CHAT_ID") or "").strip()
-    if not chat_id:
-        return False, "Telegram relay needs HERMES_TELEGRAM_CHAT_ID in the pet process environment"
-    args.extend(["--telegram-chat-id", chat_id])
-
-    env = _pet_process_env()
-    env["HERMES_TELEGRAM_BOT_TOKEN"] = bot_token
-    try:
-        with log_path.open("ab", buffering=0) as log_file:
-            process = subprocess.Popen(
-                args,
-                cwd=str(Path(__file__).resolve().parents[1]),
-                env=env,
-                stdin=subprocess.DEVNULL,
-                stdout=log_file,
-                stderr=subprocess.STDOUT,
-                start_new_session=True,
-                close_fds=True,
-            )
-    except OSError as exc:
-        return False, f"failed to launch Telegram relay: {exc}"
-
-    time.sleep(0.25)
-    if process.poll() is not None:
-        return False, f"Telegram relay exited early; see {log_path}"
-    _write_telegram_relay_runtime(process.pid, log_path)
-    return True, f"launched Telegram relay: pid={process.pid}"
-
-
-def _clean_ssh_target(target: str) -> str:
-    clean = target.strip()
-    if not clean:
-        raise ValueError("SSH target required")
-    if clean.startswith("-"):
-        raise ValueError("SSH target must not start with '-'")
-    if not re.fullmatch(r"[A-Za-z0-9._@:-]{1,160}", clean):
-        raise ValueError("SSH target may only contain letters, numbers, '.', '_', '@', ':', and '-'")
-    return clean
-
-
-def _launch_hermes_ssh_terminal(*, target: str) -> tuple[bool, str]:
-    if sys.platform != "darwin":
-        return False, "SSH terminal launch is only implemented for macOS"
-
-    try:
-        ssh_target = _clean_ssh_target(target)
-    except ValueError as exc:
-        return False, str(exc)
-
-    runtime_dir = get_hermes_home() / "runtime"
-    runtime_dir.mkdir(parents=True, exist_ok=True)
-    script_path = runtime_dir / "pet_launch_ssh.command"
-    python_exe = _hermes_python_executable()
-    project_root = Path(__file__).resolve().parents[1]
-    script = "\n".join([
-        "#!/bin/zsh",
-        "set -e",
-        "unset PYTHONPATH",
-        "unset PYTHONHOME",
-        f"export VIRTUAL_ENV={shlex.quote(str(project_root / 'venv'))}",
-        'export PATH="$VIRTUAL_ENV/bin:$PATH"',
-        f"cd {shlex.quote(str(project_root))}",
-        'echo "Hermes Pet relay exports for this Mac:"',
-        f"{shlex.quote(str(python_exe))} -m hermes_pet.cli --remote-env || true",
-        "echo",
-        'echo "Opening SSH. Paste the export lines above in the remote Hermes shell if that machine is not already configured."',
-        f"exec ssh {shlex.quote(ssh_target)}",
-        "",
-    ])
-    script_path.write_text(script)
-    script_path.chmod(0o700)
-
-    try:
-        subprocess.Popen(
-            ["open", str(script_path)],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    except OSError as exc:
-        return False, f"failed to launch SSH helper: {exc}"
-    return True, f"opened SSH helper for {ssh_target}"
 
 
 def _hermes_launch_script_lines(*, tui: bool, session_id: Optional[str]) -> tuple[str, list[str]]:
@@ -2212,7 +2011,6 @@ def _handle_macos_helper_action(
         query = ""
         pet_id = ""
         asset_id = ""
-        target = ""
         language = ""
         allow_resume = True
         left_click_opens_terminal = None
@@ -2227,7 +2025,6 @@ def _handle_macos_helper_action(
         query = str(payload.get("query") or "").strip()
         pet_id = str(payload.get("pet_id") or payload.get("petId") or "").strip()
         asset_id = str(payload.get("asset_id") or payload.get("assetId") or "").strip()
-        target = str(payload.get("target") or payload.get("ssh_target") or payload.get("sshTarget") or "").strip()
         language = str(payload.get("language") or "").strip().lower()
         allow_resume_raw = payload.get("allow_resume") if "allow_resume" in payload else payload.get("allowResume")
         allow_resume = _boolish(allow_resume_raw, default=True)
@@ -2252,7 +2049,7 @@ def _handle_macos_helper_action(
         sort = str(payload.get("sort") or "new").strip()
         content = str(payload.get("content") or "safe").strip()
 
-    if action == "clear_remotes":
+    if action == "clear_extra_pets":
         return _apply_pet_event(
             pets,
             PetEvent(
@@ -2540,10 +2337,6 @@ def _handle_macos_helper_action(
 
     if action in {"launch_cli", "launch_tui"}:
         ok, message = _launch_hermes_terminal(tui=action == "launch_tui")
-    elif action == "launch_ssh":
-        ok, message = _launch_hermes_ssh_terminal(target=target)
-    elif action == "launch_telegram":
-        ok, message = _launch_hermes_telegram_relay()
     elif action in {"open_session_cli", "open_session_tui"} and session_id:
         ok, message = _focus_active_session_before_launch(
             session_id,
@@ -2562,8 +2355,6 @@ def _handle_macos_helper_action(
     if action in {
         "launch_cli",
         "launch_tui",
-        "launch_ssh",
-        "launch_telegram",
         "open_session_cli",
         "open_session_tui",
         "focus_session",

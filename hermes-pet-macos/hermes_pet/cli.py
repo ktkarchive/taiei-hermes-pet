@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import os
-import shlex
 import sys
 from pathlib import Path
 
@@ -16,10 +14,15 @@ if str(PROJECT_ROOT) not in sys.path:
 
 def _load_environment() -> None:
     try:
-        from hermes_cli.config import get_hermes_home
-        from hermes_cli.env_loader import load_hermes_dotenv
+        from dotenv import load_dotenv
+        from hermes_constants import get_hermes_home
 
-        load_hermes_dotenv(hermes_home=get_hermes_home(), project_env=PROJECT_ROOT / ".env")
+        user_env = get_hermes_home() / ".env"
+        if user_env.exists():
+            load_dotenv(dotenv_path=user_env, override=True, encoding="utf-8")
+        project_env = PROJECT_ROOT / ".env"
+        if project_env.exists():
+            load_dotenv(dotenv_path=project_env, override=not user_env.exists(), encoding="utf-8")
     except Exception:
         pass
 
@@ -30,9 +33,7 @@ def cmd_pet(args: argparse.Namespace) -> None:
         install_pet_launch_agent,
         pet_launchd_status,
         pet_overlay_status,
-        relay_token_file,
         resolve_relay_token,
-        resolve_tailscale_host,
         run_pet_overlay,
         start_pet_launch_agent,
         start_pet_overlay_background,
@@ -41,23 +42,13 @@ def cmd_pet(args: argparse.Namespace) -> None:
         uninstall_pet_launch_agent,
     )
 
-    try:
-        pet_host = resolve_tailscale_host() if getattr(args, "tailscale", False) else args.host
-    except RuntimeError as exc:
-        print(f"Could not resolve Tailscale address: {exc}", file=sys.stderr)
-        sys.exit(1)
-
-    allow_non_loopback = getattr(args, "insecure", False) or getattr(args, "tailscale", False)
-    use_token_file = bool(
-        getattr(args, "use_token_file", False)
-        or getattr(args, "rotate_token", False)
-        or getattr(args, "tailscale", False)
-    )
+    pet_host = args.host
+    allow_non_loopback = getattr(args, "insecure", False)
     try:
         pet_token = resolve_relay_token(
             args.token,
-            use_token_file=use_token_file,
-            rotate=getattr(args, "rotate_token", False),
+            use_token_file=False,
+            rotate=False,
         )
     except Exception as exc:
         print(f"Could not prepare Hermes Pet relay token: {exc}", file=sys.stderr)
@@ -70,55 +61,6 @@ def cmd_pet(args: argparse.Namespace) -> None:
         else:
             reason = status.get("reason") or "not running"
             print(f"Hermes Pet not running: {reason}")
-        return
-
-    if getattr(args, "remote_env", False):
-        status = pet_overlay_status()
-        if not status.get("running"):
-            reason = status.get("reason") or "not running"
-            print(f"Hermes Pet not running: {reason}", file=sys.stderr)
-            sys.exit(1)
-        url = status.get("url")
-        token = status.get("token")
-        if not url or not token:
-            print("Active Hermes Pet runtime has no relay URL/token", file=sys.stderr)
-            sys.exit(1)
-        import urllib.parse
-
-        parsed = urllib.parse.urlparse(str(url))
-        if (parsed.hostname or "").lower() in {"127.0.0.1", "localhost", "::1"}:
-            print(
-                "Active Hermes Pet is localhost-only; remote-env would not be reachable from another PC.",
-                file=sys.stderr,
-            )
-            print(
-                "Start a remote relay explicitly when needed: hermes-pet --background --tailscale",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        print(f"export HERMES_PET_RELAY_URL={shlex.quote(str(url))}")
-        print(f"export HERMES_PET_RELAY_TOKEN={shlex.quote(str(token))}")
-        print('export HERMES_PET_SOURCE_ID="remote-hermes-$(hostname -s 2>/dev/null || hostname)"')
-        print('export HERMES_PET_LABEL="Hermes $(hostname -s 2>/dev/null || hostname)"')
-        print("# Optional, after saving an artwork entry locally on this Mac:")
-        print("# export HERMES_PET_ASSET_ID=<saved-artwork-asset-id>")
-        return
-
-    if getattr(args, "token_status", False):
-        token_exists = relay_token_file().exists()
-        print(f"Relay token file: {relay_token_file()}")
-        print(f"Exists: {token_exists}")
-        if token_exists:
-            print("Token: configured")
-        return
-
-    if getattr(args, "relay_test", False):
-        from hermes_cli.pet_forwarder import run_relay_test
-
-        ok, message = run_relay_test(args.relay_test_message)
-        print(message)
-        if not ok:
-            sys.exit(1)
         return
 
     if getattr(args, "restart", False):
@@ -322,16 +264,6 @@ def cmd_pet(args: argparse.Namespace) -> None:
         restart_running_pet_if_needed()
         return
 
-    if getattr(args, "rotate_token", False) and not (
-        getattr(args, "background", False)
-        or getattr(args, "install_launch_agent", False)
-    ):
-        print(f"Rotated Hermes Pet relay token: {relay_token_file()}")
-        status = pet_overlay_status()
-        if status.get("running"):
-            print("Restart Hermes Pet for the rotated token to take effect.")
-        return
-
     if getattr(args, "stop", False):
         stopped, message = stop_pet_overlay()
         print(message)
@@ -422,31 +354,6 @@ def cmd_pet(args: argparse.Namespace) -> None:
             print(f"{mode} pid={pid} session={sid} cwd={cwd}")
         return
 
-    if getattr(args, "relay_telegram", False):
-        from hermes_cli.pet_telegram_relay import run_telegram_relay
-
-        bot_token = args.telegram_bot_token or os.getenv("HERMES_TELEGRAM_BOT_TOKEN")
-        if not bot_token:
-            print("Telegram bot token required: pass --telegram-bot-token or set HERMES_TELEGRAM_BOT_TOKEN", file=sys.stderr)
-            sys.exit(2)
-        if not args.telegram_chat_id and not getattr(args, "telegram_allow_any_chat", False):
-            print(
-                "Telegram chat id required: pass --telegram-chat-id or explicitly use --telegram-allow-any-chat",
-                file=sys.stderr,
-            )
-            sys.exit(2)
-        run_telegram_relay(
-            bot_token=bot_token,
-            chat_id=args.telegram_chat_id,
-            allow_any_chat=getattr(args, "telegram_allow_any_chat", False),
-            relay_url=args.relay_url,
-            relay_token=args.relay_token or pet_token,
-            offset_path=args.telegram_offset_file,
-            poll_interval=args.telegram_poll_interval,
-            once=args.telegram_once,
-        )
-        return
-
     run_pet_overlay(
         host=pet_host,
         port=args.port,
@@ -470,9 +377,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     manage = parser.add_mutually_exclusive_group()
     manage.add_argument("--status", action="store_true", help="Show the active Hermes Pet process and exit")
-    manage.add_argument("--remote-env", action="store_true", help=argparse.SUPPRESS)
-    manage.add_argument("--token-status", action="store_true", help=argparse.SUPPRESS)
-    manage.add_argument("--relay-test", action="store_true", help=argparse.SUPPRESS)
     manage.add_argument("--stop", action="store_true", help="Stop the active Hermes Pet process and exit")
     manage.add_argument("--restart", action="store_true", help="Restart Hermes Pet as a detached background process")
     manage.add_argument("--background", action="store_true", help="Start Hermes Pet as a detached background process")
@@ -482,7 +386,6 @@ def build_parser() -> argparse.ArgumentParser:
     manage.add_argument("--uninstall-launch-agent", action="store_true", help="Unload and remove the macOS LaunchAgent")
     manage.add_argument("--start-launch-agent", action="store_true", help="Start the installed macOS LaunchAgent")
     manage.add_argument("--stop-launch-agent", action="store_true", help="Stop the macOS LaunchAgent")
-    manage.add_argument("--relay-telegram", action="store_true", help=argparse.SUPPRESS)
     manage.add_argument("--share-current", action="store_true", help="Show currently applied Codex Pet Share artwork")
     manage.add_argument("--share-installed", action="store_true", help="List locally saved Hermes Pet artwork")
     manage.add_argument("--share-list", action="store_true", help="List pets from codex-pet-share.pages.dev")
@@ -496,11 +399,8 @@ def build_parser() -> argparse.ArgumentParser:
     manage.add_argument("--share-clear", action="store_true", help="Return Hermes Pet to bundled artwork")
 
     parser.add_argument("--host", default="127.0.0.1", help="Event inlet bind host (default 127.0.0.1)")
-    parser.add_argument("--tailscale", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--port", type=int, default=8768, help="Event inlet port (default 8768)")
     parser.add_argument("--token", default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--use-token-file", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--rotate-token", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--label", default="Hermes Local", help="Label shown for the local Hermes pet")
     parser.add_argument("--size", type=int, default=84, help="Pet size in pixels (default 84)")
     parser.add_argument("--no-local", action="store_true", help="Start without the default local Hermes pet")
@@ -508,15 +408,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--y", type=int, default=None, help="Initial window Y position")
     parser.add_argument("--insecure", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--force", action="store_true", help="Replace an existing LaunchAgent definition")
-    parser.add_argument("--relay-url", default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--relay-token", default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--relay-test-message", default="relay test", help=argparse.SUPPRESS)
-    parser.add_argument("--telegram-bot-token", default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--telegram-chat-id", default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--telegram-allow-any-chat", action="store_true", help=argparse.SUPPRESS)
-    parser.add_argument("--telegram-offset-file", default=None, help=argparse.SUPPRESS)
-    parser.add_argument("--telegram-poll-interval", type=float, default=2.0, help=argparse.SUPPRESS)
-    parser.add_argument("--telegram-once", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--share-page", type=int, default=1, help="Codex Pet Share page")
     parser.add_argument("--share-page-size", type=int, default=12, help="Codex Pet Share page size")
     parser.add_argument("--share-sort", choices=["new", "popular", "views"], default="new", help="Codex Pet Share sort")

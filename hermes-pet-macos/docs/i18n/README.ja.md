@@ -16,7 +16,7 @@ Hermes Pet は Hermes Agent 用のデスクトップペットです。ブラウ�
 
 ## 概要
 
-現在の public MVP は、Hermes 本体を変更しない薄い Hermes connector と `hermes-pet` skill wrapper を使います。
+Hermes Pet は Hermes Agent 向けの macOS デスクトップペットです。現在の配布版は取り外し可能な `hermes-pet` コマンドと Hermes skill wrapper だけをインストールし、ユーザーのグローバル `hermes` コマンドや upstream Hermes checkout を変更しません。
 
 ローカル MVP はデフォルトで localhost のみを使います。
 
@@ -47,14 +47,14 @@ if [ -d "$INSTALL_DIR/.git" ]; then
 else
   git clone https://github.com/ktkarchive/taiei-hermes-pet.git "$INSTALL_DIR"
 fi
-bash "$INSTALL_DIR/connectors/hermes/install-from-git.sh"
+bash "$INSTALL_DIR/install.sh"
 ```
 
 手動 clone:
 
 ```bash
 git clone https://github.com/ktkarchive/taiei-hermes-pet.git
-cd taiei-hermes-pet
+cd taiei-hermes-pet/hermes-pet-macos
 bash connectors/hermes/install.sh
 hermes-pet --background --port 8768
 ```
@@ -84,9 +84,9 @@ macOS 上で既に動いている Hermes CLI/TUI に次のように依頼でき�
 
 ```text
 Install Hermes Pet from https://github.com/ktkarchive/taiei-hermes-pet.
-Use the repository's connectors/hermes/install-from-git.sh installer, start the
-local desktop pet on port 8768, then verify status, health, and the installed
-hermes-pet skill doctor. Do not modify my global hermes command.
+Use the repository install.sh, start the local desktop pet on port 8768, then
+verify status, health, and the installed hermes-pet skill doctor. Do not modify
+my global hermes command.
 ```
 
 installer は repo を `~/.hermes/pet/taiei-hermes-pet` に clone または

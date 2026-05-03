@@ -15,7 +15,7 @@ Hermes Pet 是 Hermes Agent 的桌面宠物伴侣。它不是浏览器组件，�
 
 ## 概览
 
-Hermes Pet 的当前 public MVP 使用一个很薄的 Hermes connector 和 `hermes-pet` skill wrapper。默认安装不修改上游 Hermes 源码。
+Hermes Pet 是面向 Hermes Agent 的 macOS 桌面宠物。当前发行版只安装可移除的 `hermes-pet` 命令和 Hermes skill wrapper，不修改用户的全局 `hermes` 命令或上游 Hermes checkout。
 
 本地 MVP 默认只绑定 localhost:
 
@@ -46,14 +46,14 @@ if [ -d "$INSTALL_DIR/.git" ]; then
 else
   git clone https://github.com/ktkarchive/taiei-hermes-pet.git "$INSTALL_DIR"
 fi
-bash "$INSTALL_DIR/connectors/hermes/install-from-git.sh"
+bash "$INSTALL_DIR/install.sh"
 ```
 
 手动 clone:
 
 ```bash
 git clone https://github.com/ktkarchive/taiei-hermes-pet.git
-cd taiei-hermes-pet
+cd taiei-hermes-pet/hermes-pet-macos
 bash connectors/hermes/install.sh
 hermes-pet --background --port 8768
 ```
@@ -83,9 +83,9 @@ hermes-pet --stop
 
 ```text
 Install Hermes Pet from https://github.com/ktkarchive/taiei-hermes-pet.
-Use the repository's connectors/hermes/install-from-git.sh installer, start the
-local desktop pet on port 8768, then verify status, health, and the installed
-hermes-pet skill doctor. Do not modify my global hermes command.
+Use the repository install.sh, start the local desktop pet on port 8768, then
+verify status, health, and the installed hermes-pet skill doctor. Do not modify
+my global hermes command.
 ```
 
 安装器会把 repo clone 或 fast-forward update 到

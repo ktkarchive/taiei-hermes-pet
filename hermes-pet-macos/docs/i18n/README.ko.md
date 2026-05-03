@@ -15,7 +15,7 @@ Hermes Agent용 데스크탑 펫입니다. Hermes Pet은 브라우저 안이 아
 
 ## 개요
 
-Hermes Pet은 Hermes Agent의 화면 위 컴패니언입니다. 웹 대시보드 위젯이 아니며, 투명한 always-on-top macOS 패널로 실행됩니다. 현재 public MVP는 Hermes 원판을 수정하지 않는 얇은 Hermes connector와 `hermes-pet` 스킬 wrapper를 사용합니다.
+Hermes Pet은 macOS 화면 위에서 실행되는 Hermes Agent용 데스크탑 펫입니다. 현재 배포판은 전역 `hermes` 명령이나 Hermes 원판 checkout을 수정하지 않고, 제거 가능한 `hermes-pet` 명령과 Hermes skill wrapper만 설치합니다.
 
 기본 로컬 MVP는 localhost 전용입니다.
 
@@ -46,14 +46,14 @@ if [ -d "$INSTALL_DIR/.git" ]; then
 else
   git clone https://github.com/ktkarchive/taiei-hermes-pet.git "$INSTALL_DIR"
 fi
-bash "$INSTALL_DIR/connectors/hermes/install-from-git.sh"
+bash "$INSTALL_DIR/install.sh"
 ```
 
 수동 clone 방식:
 
 ```bash
 git clone https://github.com/ktkarchive/taiei-hermes-pet.git
-cd taiei-hermes-pet
+cd taiei-hermes-pet/hermes-pet-macos
 bash connectors/hermes/install.sh
 hermes-pet --background --port 8768
 ```
@@ -83,9 +83,9 @@ macOS에서 이미 실행 중인 Hermes CLI/TUI에 아래처럼 요청하면 됩
 
 ```text
 https://github.com/ktkarchive/taiei-hermes-pet 를 참고해서 Hermes Pet을 설치해줘.
-repo의 connectors/hermes/install-from-git.sh installer를 사용하고, 로컬 desktop
-pet을 8768 포트로 시작한 다음 status, health, 설치된 hermes-pet skill doctor를
-검증해줘. 전역 hermes 명령은 수정하지 마.
+repo의 install.sh를 사용하고, 로컬 desktop pet을 8768 포트로 시작한 다음
+status, health, 설치된 hermes-pet skill doctor를 검증해줘. 전역 hermes 명령은
+수정하지 마.
 ```
 
 installer는 repo를 `~/.hermes/pet/taiei-hermes-pet` 아래에 clone 또는

@@ -734,29 +734,6 @@ final class PetOverlayView: NSView {
         emitAction("launch_tui")
     }
 
-    @objc private func promptLaunchSSH() {
-        NSApp.activate(ignoringOtherApps: true)
-        let alert = NSAlert()
-        alert.messageText = tr("launchSSHTitle")
-        alert.informativeText = tr("launchSSHInfo")
-        alert.alertStyle = .informational
-        let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 320, height: 24))
-        input.placeholderString = "user@host"
-        alert.accessoryView = input
-        alert.addButton(withTitle: tr("openSSH"))
-        alert.addButton(withTitle: tr("cancel"))
-        if alert.runModal() == .alertFirstButtonReturn {
-            emitJSONAction([
-                "action": "launch_ssh",
-                "target": input.stringValue,
-            ])
-        }
-    }
-
-    @objc private func launchTelegramRelay() {
-        emitAction("launch_telegram")
-    }
-
     @objc private func setLanguageFromMenu(_ sender: NSMenuItem) {
         guard let language = sender.representedObject as? String,
               supportedLanguages.contains(language)
@@ -771,7 +748,7 @@ final class PetOverlayView: NSView {
     }
 
     @objc private func clearRemotePets() {
-        emitAction("clear_remotes")
+        emitAction("clear_extra_pets")
     }
 
     @objc private func clearNotifications() {

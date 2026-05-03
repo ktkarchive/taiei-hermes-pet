@@ -107,7 +107,12 @@ else
   exit 1
 fi
 
-bash "${INSTALL_DIR}/connectors/hermes/install.sh"
+PET_PROJECT_ROOT="${INSTALL_DIR}"
+if [ -f "${INSTALL_DIR}/hermes-pet-macos/hermes_pet/cli.py" ]; then
+  PET_PROJECT_ROOT="${INSTALL_DIR}/hermes-pet-macos"
+fi
+
+bash "${PET_PROJECT_ROOT}/connectors/hermes/install.sh" --project-root "${PET_PROJECT_ROOT}"
 
 if [ "$START_PET" -eq 1 ]; then
   "${BIN_DIR}/hermes-pet" --background --port "$PORT"
