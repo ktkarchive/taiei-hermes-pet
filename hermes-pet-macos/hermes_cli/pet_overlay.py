@@ -2228,7 +2228,11 @@ def _handle_macos_helper_action(
 
     if action == "search_pet_share":
         try:
-            from hermes_cli.pet_share import cache_share_pet_thumbnail, list_share_pets
+            from hermes_cli.pet_share import (
+                cached_share_pet_thumbnail_path,
+                list_share_pets,
+                warm_share_pet_thumbnails,
+            )
 
             page = list_share_pets(
                 query=query,
@@ -2240,7 +2244,7 @@ def _handle_macos_helper_action(
             for pet in page.pets:
                 thumbnail_path = ""
                 try:
-                    thumbnail = cache_share_pet_thumbnail(pet, size=64)
+                    thumbnail = cached_share_pet_thumbnail_path(pet, size=64)
                     thumbnail_path = str(thumbnail) if thumbnail else ""
                 except Exception:
                     thumbnail_path = ""
@@ -2257,6 +2261,13 @@ def _handle_macos_helper_action(
                 })
             message = f"{page.total} result{'s' if page.total != 1 else ''}"
             set_share_response(_share_response("results", message=message, query=query, pets=results))
+            if page.pets:
+                threading.Thread(
+                    target=warm_share_pet_thumbnails,
+                    kwargs={"pets": page.pets, "size": 64, "limit": 4},
+                    daemon=True,
+                    name="hermes-pet-share-thumb-warm",
+                ).start()
         except Exception as exc:
             set_share_response(_share_response("error", message=f"Search failed: {exc}", query=query))
         return True

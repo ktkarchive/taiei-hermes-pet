@@ -322,6 +322,29 @@ def cache_share_pet_thumbnail(pet: PetSharePet, *, size: int = 64) -> Optional[P
     return thumbnail if thumbnail.exists() else None
 
 
+def cached_share_pet_thumbnail_path(pet: PetSharePet, *, size: int = 64) -> Optional[Path]:
+    """Return an existing thumbnail path without network, compile, or conversion work."""
+    if not pet.spritesheet_url:
+        return None
+    resolved_size = max(40, min(size, 96))
+    key = hashlib.sha256(f"{pet.id}:{pet.spritesheet_url}:{resolved_size}".encode("utf-8")).hexdigest()[:14]
+    thumbnail = (
+        pet_thumbnail_cache_dir()
+        / f"{_clean_asset_id(pet.id) or 'pet'}-{key}"
+        / f"hermes_pet_idle_{resolved_size}.png"
+    )
+    return thumbnail if thumbnail.exists() else None
+
+
+def warm_share_pet_thumbnails(pets: tuple[PetSharePet, ...], *, size: int = 64, limit: int = 4) -> None:
+    """Best-effort thumbnail cache warmer for UI follow-up interactions."""
+    for pet in pets[: max(0, min(limit, len(pets)))]:
+        try:
+            cache_share_pet_thumbnail(pet, size=size)
+        except Exception:
+            continue
+
+
 def fetch_share_pet(identifier: str) -> PetSharePet:
     pet_id = extract_share_pet_id(identifier)
     if not pet_id:
