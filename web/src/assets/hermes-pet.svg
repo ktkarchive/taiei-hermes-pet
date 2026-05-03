@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 208" role="img" aria-labelledby="title desc">
+  <title id="title">Hermes pet avatar</title>
+  <desc id="desc">A small Hermes-inspired mascot with a winged cap, warm hair, teal cloak, and golden sandals.</desc>
+  <defs>
+    <linearGradient id="cloak" x1="52" x2="148" y1="106" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#20c7ad"/>
+      <stop offset="1" stop-color="#0f6f72"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="54" x2="140" y1="50" y2="126" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9f4d2f"/>
+      <stop offset="0.58" stop-color="#613024"/>
+      <stop offset="1" stop-color="#2c1b1a"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#001516" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <ellipse cx="96" cy="190" rx="46" ry="9" fill="#001516" opacity="0.34"/>
+
+  <g filter="url(#shadow)">
+    <path d="M68 96c-19 14-29 40-23 67 8 8 26 13 51 13s43-5 51-13c6-27-4-53-23-67z" fill="url(#cloak)" stroke="#042b2c" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M70 101c-10 18-9 44 0 65 7 4 16 6 26 6 12 0 22-2 29-6 8-23 7-47-3-65z" fill="#f5debd" opacity="0.18"/>
+
+    <path d="M55 80c1-27 18-52 41-52s40 25 41 52c1 43-16 66-41 66S54 123 55 80z" fill="url(#hair)" stroke="#2b1715" stroke-width="6"/>
+    <path d="M64 89c0-25 13-43 32-43s32 18 32 43c0 26-13 43-32 43S64 115 64 89z" fill="#f5cda5" stroke="#2b1715" stroke-width="5"/>
+
+    <path d="M49 70c-13-4-25-3-35 4 6-18 19-29 39-32 10 5 16 13 19 24z" fill="#e9fbf6" stroke="#083435" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M143 70c13-4 25-3 35 4-6-18-19-29-39-32-10 5-16 13-19 24z" fill="#e9fbf6" stroke="#083435" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M26 61c12-1 23 2 34 9M166 61c-12-1-23 2-34 9" fill="none" stroke="#8ccfc2" stroke-width="3" stroke-linecap="round"/>
+
+    <path d="M58 50c7-19 20-30 38-30s31 11 38 30c-11 7-24 10-38 10s-27-3-38-10z" fill="#f2e4c6" stroke="#2b1715" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M77 26c4-11 10-17 19-17s15 6 19 17c-5 5-11 7-19 7s-14-2-19-7z" fill="#f4d16f" stroke="#2b1715" stroke-width="5" stroke-linejoin="round"/>
+    <circle cx="96" cy="40" r="7" fill="#21b6a8" stroke="#2b1715" stroke-width="4"/>
+
+    <path d="M75 93c6-5 12-5 18 0M99 93c6-5 12-5 18 0" fill="none" stroke="#2b1715" stroke-width="5" stroke-linecap="round"/>
+    <path d="M82 111c8 8 20 8 28 0" fill="none" stroke="#8d3f2f" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="70" cy="104" r="6" fill="#eaa37f" opacity="0.45"/>
+    <circle cx="122" cy="104" r="6" fill="#eaa37f" opacity="0.45"/>
+
+    <path d="M54 126c-13 7-20 16-21 29 7 4 16 3 26-3" fill="#f5cda5" stroke="#2b1715" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M138 126c13 7 20 16 21 29-7 4-16 3-26-3" fill="#f5cda5" stroke="#2b1715" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <path d="M78 171c-8 6-12 13-10 21 10 2 18-1 24-8" fill="#f4d16f" stroke="#2b1715" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M114 171c8 6 12 13 10 21-10 2-18-1-24-8" fill="#f4d16f" stroke="#2b1715" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
