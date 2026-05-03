@@ -13,11 +13,11 @@ if [ -z "$PROJECT_ROOT" ] && [ -n "${HERMES_SKILL_DIR:-}" ] && [ -f "${HERMES_SK
 fi
 
 run_pet() {
-  if [ -n "$PROJECT_ROOT" ] && [ -x "${PROJECT_ROOT}/venv/bin/python3" ] && [ -f "${PROJECT_ROOT}/hermes_cli/main.py" ]; then
-    (cd "$PROJECT_ROOT" && "${PROJECT_ROOT}/venv/bin/python3" -m hermes_cli.main pet "$@")
+  if [ -n "$PROJECT_ROOT" ] && [ -x "${PROJECT_ROOT}/venv/bin/python3" ] && [ -f "${PROJECT_ROOT}/hermes_pet/cli.py" ]; then
+    (cd "$PROJECT_ROOT" && "${PROJECT_ROOT}/venv/bin/python3" -m hermes_pet.cli "$@")
     return
   fi
-  hermes pet "$@"
+  hermes-pet "$@"
 }
 
 usage() {
@@ -97,10 +97,10 @@ case "$CMD" in
     echo "HERMES_SKILL_DIR=${HERMES_SKILL_DIR:-}"
     echo "PROJECT_ROOT=${PROJECT_ROOT:-}"
     if [ -n "${PROJECT_ROOT:-}" ]; then
-      if [ -f "${PROJECT_ROOT}/hermes_cli/main.py" ]; then
-        echo "project_main=ok"
+      if [ -f "${PROJECT_ROOT}/hermes_pet/cli.py" ]; then
+        echo "project_pet_cli=ok"
       else
-        echo "project_main=missing"
+        echo "project_pet_cli=missing"
       fi
       if [ -x "${PROJECT_ROOT}/venv/bin/python3" ]; then
         echo "project_python=ok"

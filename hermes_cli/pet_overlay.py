@@ -431,6 +431,8 @@ def _pid_matches_pet_runtime(pid: int) -> tuple[bool, str]:
     if not command:
         return False, "runtime pid command could not be verified"
     if (
+        "hermes_pet.cli" in command
+    ) or (
         "hermes_cli.main" in command
         and re.search(r"(^|\s)pet(\s|$)", command)
     ) or re.search(r"(^|/|\\)hermes-pet(\s|$)", command) or (
@@ -513,8 +515,7 @@ def _pet_process_args(
     args = [
         str(_hermes_python_executable()),
         "-m",
-        "hermes_cli.main",
-        "pet",
+        "hermes_pet.cli",
         "--host",
         str(host),
         "--port",
@@ -630,8 +631,7 @@ def _schedule_pet_restart(
     args = [
         sys.executable,
         "-m",
-        "hermes_cli.main",
-        "pet",
+        "hermes_pet.cli",
         "--background",
         "--host",
         host,
@@ -1606,8 +1606,7 @@ def _launch_hermes_telegram_relay() -> tuple[bool, str]:
     args = [
         str(_hermes_python_executable()),
         "-m",
-        "hermes_cli.main",
-        "pet",
+        "hermes_pet.cli",
         "--relay-telegram",
     ]
     chat_id = str(os.getenv("HERMES_TELEGRAM_CHAT_ID") or "").strip()
@@ -1673,7 +1672,7 @@ def _launch_hermes_ssh_terminal(*, target: str) -> tuple[bool, str]:
         'export PATH="$VIRTUAL_ENV/bin:$PATH"',
         f"cd {shlex.quote(str(project_root))}",
         'echo "Hermes Pet relay exports for this Mac:"',
-        f"{shlex.quote(str(python_exe))} -m hermes_cli.main pet --remote-env || true",
+        f"{shlex.quote(str(python_exe))} -m hermes_pet.cli --remote-env || true",
         "echo",
         'echo "Opening SSH. Paste the export lines above in the remote Hermes shell if that machine is not already configured."',
         f"exec ssh {shlex.quote(ssh_target)}",
@@ -1697,7 +1696,10 @@ def _hermes_launch_script_lines(*, tui: bool, session_id: Optional[str]) -> tupl
     kind = "tui" if tui else "cli"
     python_exe = _hermes_python_executable()
     project_root = Path(__file__).resolve().parents[1]
-    args = [str(python_exe), "-m", "hermes_cli.main"]
+    if (project_root / "hermes_cli" / "main.py").exists():
+        args = [str(python_exe), "-m", "hermes_cli.main"]
+    else:
+        args = ["hermes"]
     if tui:
         args.append("--tui")
     if session_id:

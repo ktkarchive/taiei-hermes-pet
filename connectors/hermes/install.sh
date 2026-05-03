@@ -10,8 +10,6 @@ DEFAULT_BIN_DIR="${HOME}/.local/bin"
 DEFAULT_SKILL_TARGET="${HOME}/.hermes/skills/productivity/hermes-pet"
 ALLOW_CUSTOM_INSTALL="${HERMES_PET_ALLOW_CUSTOM_INSTALL:-0}"
 BOOTSTRAP_VENV="${HERMES_PET_BOOTSTRAP_VENV:-1}"
-EDITABLE_INSTALL="${HERMES_PET_EDITABLE_INSTALL:-0}"
-INSTALL_MODE="${HERMES_PET_INSTALL_MODE:-pet}"
 DRY_RUN=0
 PET_RUNTIME_DEPS=(
   "PyYAML>=6.0.2,<7"
@@ -30,15 +28,12 @@ Options:
   --bin-dir PATH        Directory for the standalone hermes-pet command
   --skill-dir PATH      Installed Hermes skill directory
   --no-bootstrap        Do not create/install the project venv if missing
-  --full-hermes         Install the repository's full base Hermes package
   --dry-run             Print actions without changing files
   -h, --help            Show this help
 
 Environment:
   HERMES_PET_PROJECT_ROOT, HERMES_PET_BIN_DIR, HERMES_PET_SKILL_DIR,
-  HERMES_PET_BOOTSTRAP_VENV, HERMES_PET_INSTALL_MODE,
-  HERMES_PET_EDITABLE_INSTALL,
-  HERMES_PET_ALLOW_CUSTOM_INSTALL
+  HERMES_PET_BOOTSTRAP_VENV, HERMES_PET_ALLOW_CUSTOM_INSTALL
 EOF
 }
 
@@ -58,10 +53,6 @@ while [ "$#" -gt 0 ]; do
       ;;
     --no-bootstrap)
       BOOTSTRAP_VENV=0
-      shift
-      ;;
-    --full-hermes)
-      INSTALL_MODE=full
       shift
       ;;
     --dry-run)
@@ -85,9 +76,9 @@ if [ "$(uname -s)" != "Darwin" ]; then
   exit 1
 fi
 
-if [ ! -f "${PROJECT_ROOT}/hermes_cli/main.py" ]; then
+if [ ! -f "${PROJECT_ROOT}/hermes_pet/cli.py" ]; then
   echo "Invalid Hermes Pet project root: ${PROJECT_ROOT}" >&2
-  echo "Expected hermes_cli/main.py." >&2
+  echo "Expected hermes_pet/cli.py." >&2
   exit 1
 fi
 
@@ -112,18 +103,9 @@ ensure_project_python() {
   fi
   if [ "$DRY_RUN" -eq 1 ]; then
     printf '+ python3 -m venv %q\n' "${PROJECT_ROOT}/venv"
-    if [ "$INSTALL_MODE" = "full" ]; then
-      printf '+ %q -m pip install --upgrade pip\n' "${PROJECT_ROOT}/venv/bin/python3"
-      if [ "$EDITABLE_INSTALL" = "1" ]; then
-        printf '+ %q -m pip install -e %q\n' "${PROJECT_ROOT}/venv/bin/python3" "$PROJECT_ROOT"
-      else
-        printf '+ %q -m pip install %q\n' "${PROJECT_ROOT}/venv/bin/python3" "$PROJECT_ROOT"
-      fi
-    else
-      printf '+ %q -m pip install --disable-pip-version-check' "${PROJECT_ROOT}/venv/bin/python3"
-      printf ' %q' "${PET_RUNTIME_DEPS[@]}"
-      printf '\n'
-    fi
+    printf '+ %q -m pip install --disable-pip-version-check' "${PROJECT_ROOT}/venv/bin/python3"
+    printf ' %q' "${PET_RUNTIME_DEPS[@]}"
+    printf '\n'
     return
   fi
   if ! command -v python3 >/dev/null 2>&1; then
@@ -131,16 +113,7 @@ ensure_project_python() {
     exit 1
   fi
   python3 -m venv "${PROJECT_ROOT}/venv"
-  if [ "$INSTALL_MODE" = "full" ]; then
-    "${PROJECT_ROOT}/venv/bin/python3" -m pip install --upgrade pip
-    if [ "$EDITABLE_INSTALL" = "1" ]; then
-      "${PROJECT_ROOT}/venv/bin/python3" -m pip install -e "$PROJECT_ROOT"
-    else
-      "${PROJECT_ROOT}/venv/bin/python3" -m pip install "$PROJECT_ROOT"
-    fi
-  else
-    "${PROJECT_ROOT}/venv/bin/python3" -m pip install --disable-pip-version-check "${PET_RUNTIME_DEPS[@]}"
-  fi
+  "${PROJECT_ROOT}/venv/bin/python3" -m pip install --disable-pip-version-check "${PET_RUNTIME_DEPS[@]}"
 }
 
 absolute_path() {
@@ -217,5 +190,4 @@ Hermes Pet connector installed.
 Skill: ${SKILL_TARGET}
 Command: ${BIN_DIR}/hermes-pet
 Project root: ${PROJECT_ROOT}
-Install mode: ${INSTALL_MODE}
 EOF

@@ -57,10 +57,7 @@ require `HERMES_PET_ALLOW_CUSTOM_INSTALL=1`, and destructive targets such as
 Fresh clones bootstrap `venv/` automatically unless `--no-bootstrap` is passed.
 Production bootstrap installs only `PyYAML>=6.0.2,<7` and
 `python-dotenv>=1.2.1,<2`, which are the Python packages required by the local
-desktop pet runtime path. Pass `--full-hermes` only when this checkout should
-also install the full base Hermes Agent package for local CLI/TUI sessions;
-set `HERMES_PET_EDITABLE_INSTALL=1` only for local development with
-`--full-hermes`.
+desktop pet runtime path.
 The macOS MVP installer does not require network forwarding, chat integration,
 or third-party terminal tools. cmux is optional and only used when the user
 selects it as a local terminal launcher. Optional extras such as messaging, web

@@ -15,17 +15,12 @@ Hermes Pet 是 Hermes Agent 的桌面宠物伴侣。它不是浏览器组件，�
 
 ## 概览
 
-Hermes Pet 的当前 MVP 使用 `hermes pet` 命令组和 `hermes-pet` skill wrapper。长期方向是独立 macOS 桌面应用加一个很薄的 Hermes connector，默认安装不修改上游 Hermes 源码。
-
-架构文档:
-
-- [`docs/architecture/hermes-pet-architecture.md`](../architecture/hermes-pet-architecture.md)
-- [`apps/macos/HermesPet`](../../apps/macos/HermesPet)
+Hermes Pet 的当前 public MVP 使用一个很薄的 Hermes connector 和 `hermes-pet` skill wrapper。默认安装不修改上游 Hermes 源码。
 
 本地 MVP 默认只绑定 localhost:
 
 ```bash
-hermes pet --background --port 8768
+hermes-pet --background --port 8768
 ```
 
 ## 功能
@@ -139,8 +134,6 @@ bash connectors/hermes/install.sh
 此安装脚本只做有限的事情:
 
 - 如果 fresh clone 中缺少 `venv/bin/python3`，自动运行 `python3 -m venv venv`，并只安装 pet runtime 需要的 `PyYAML` 和 `python-dotenv`
-- 只有当此 checkout 也需要完整 base Hermes runtime 时才使用 `--full-hermes`
-- 本地开发如需 editable install，可与 `--full-hermes` 一起设置 `HERMES_PET_EDITABLE_INSTALL=1`
 - 安装 `~/.local/bin/hermes-pet`
 - 安装 `~/.hermes/skills/productivity/hermes-pet`
 - 写入 `.project-root`，让 skill 指向当前工作区
@@ -178,26 +171,26 @@ Agent 本身。
 运行管理:
 
 ```bash
-hermes pet --status
-hermes pet --background --port 8768
-hermes pet --restart --port 8768
-hermes pet --stop
+hermes-pet --status
+hermes-pet --background --port 8768
+hermes-pet --restart --port 8768
+hermes-pet --stop
 ```
 
 会话:
 
 ```bash
-hermes pet --sessions
+hermes-pet --sessions
 ```
 
 登录项:
 
 ```bash
-hermes pet --install-launch-agent --port 8768 --force
-hermes pet --launch-agent-status
-hermes pet --start-launch-agent
-hermes pet --stop-launch-agent
-hermes pet --uninstall-launch-agent
+hermes-pet --install-launch-agent --port 8768 --force
+hermes-pet --launch-agent-status
+hermes-pet --start-launch-agent
+hermes-pet --stop-launch-agent
+hermes-pet --uninstall-launch-agent
 ```
 
 plist 路径:
@@ -213,13 +206,13 @@ Hermes Pet 可以使用内置 Hermes 图像，也可以从
 companion catalog 导入动画图像:
 
 ```bash
-hermes pet --share-list
-hermes pet --share-search "pixel"
-hermes pet --share-apply "<pet-id-or-url>" --size 84
-hermes pet --share-current
-hermes pet --share-installed
-hermes pet --share-use-installed "<asset-id>"
-hermes pet --share-clear
+hermes-pet --share-list
+hermes-pet --share-search "pixel"
+hermes-pet --share-apply "<pet-id-or-url>" --size 84
+hermes-pet --share-current
+hermes-pet --share-installed
+hermes-pet --share-use-installed "<asset-id>"
+hermes-pet --share-clear
 ```
 
 参考站点:
@@ -232,7 +225,7 @@ https://codex-pet-share.pages.dev/
 CLI 中 `--share-apply` 可以接受 pet id 或 Codex Pet Share URL:
 
 ```bash
-hermes pet --share-apply "https://codex-pet-share.pages.dev/#/pets/<pet-id>" --size 84
+hermes-pet --share-apply "https://codex-pet-share.pages.dev/#/pets/<pet-id>" --size 84
 ```
 
 导入后的图像会保存在本机 Hermes runtime 目录下。如果截图、演示或文档中使用了
@@ -279,9 +272,8 @@ Codex Pet Share 上其他创作者发布的宠物，请尽量保留宠物名称�
 ## 开发验证
 
 ```bash
-venv/bin/python3 -m py_compile hermes_cli/main.py hermes_cli/pet_overlay.py tests/hermes_cli/test_pet_overlay.py
+venv/bin/python3 -m py_compile hermes_pet/cli.py hermes_cli/pet_overlay.py
 /usr/bin/swiftc hermes_cli/assets/hermes_pet_macos.swift -o /tmp/hermes_pet_macos_test
-venv/bin/python3 -m pytest -q tests/hermes_cli/test_pet_overlay.py tests/hermes_cli/test_pet_sessions.py
 git diff --check
 ```
 
@@ -291,18 +283,13 @@ git diff --check
 bash connectors/hermes/release-check.sh
 ```
 
-该检查会运行 shell syntax、Python import、pet regression、web/dashboard
-tests、AppKit helper compile、SwiftPM app scaffold build、`git diff --check`
-以及已安装的 `hermes-pet --status`。
+该检查会运行 shell syntax、Python import、AppKit helper compile、
+`git diff --check`、minimal runtime smoke 以及已安装的 `hermes-pet --status`。
+public lean 版本不包含 test suite，因此会自动跳过 pytest。
 
 ## 发布方向
 
-发布路线分为两条:
-
-1. Hermes 专用包: skill/wrapper 和现有 `hermes pet ...` 兼容命令
-2. 通用 macOS App: 未来签名 `.dmg`、状态栏控制、connector 选择、独立登录项，并支持 Hermes/OpenClaw/Codex/Claude Code/Kimi 等 connector
-
-默认安装路径应避免修改上游 Hermes 源码。repo 内的 Hermes hook 主要用于 MVP 验证和本地开发，用户发布版应收敛到独立 App + 可移除 Hermes connector。
+此仓库目前只发布 Hermes 专用包。通用 App/DMG 不包含在这个 public MVP 中。默认安装路径不会修改上游 Hermes 源码。
 
 ## 参考
 

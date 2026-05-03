@@ -16,23 +16,21 @@ Language versions:
 
 ## What It Is
 
-Hermes Pet is a native desktop overlay for Hermes Agent. It is not a browser widget and not a web dashboard mascot. It runs as a transparent always-on-top macOS panel, similar in spirit to the Codex Desktop pet, and is controlled by the `hermes pet` command family.
+Hermes Pet is a native desktop overlay for Hermes Agent. It is not a browser widget and not a web dashboard mascot. It runs as a transparent always-on-top macOS panel, similar in spirit to the Codex Desktop pet, and is controlled by the `hermes-pet` command family.
 
 The current MVP has two runtime layers:
 
-1. Core runtime: `hermes pet`, native macOS helper, localhost event inlet, session registry, artwork importer, LaunchAgent support.
+1. Core runtime: `hermes-pet`, native macOS helper, localhost event inlet, session registry, artwork importer, LaunchAgent support.
 2. Skill wrapper: `skills/productivity/hermes-pet`, a Hermes skill that tells the agent how to start, stop, restart, install, inspect, and customize the pet safely.
 
-The product direction is update-safe: the long-term desktop pet lives as a
-separate macOS app, and Hermes support becomes a thin connector/skill/wrapper
-that can be removed without patching upstream Hermes source files. See
-[`docs/architecture/hermes-pet-architecture.md`](docs/architecture/hermes-pet-architecture.md)
-and the app scaffold in [`apps/macos/HermesPet`](apps/macos/HermesPet).
+The product direction is update-safe: Hermes support is a thin
+connector/skill/wrapper that can be removed without patching upstream Hermes
+source files.
 
 Hermes Pet is localhost-only in this macOS MVP:
 
 ```bash
-hermes pet --background --port 8768
+hermes-pet --background --port 8768
 ```
 
 ## Features
@@ -66,9 +64,7 @@ packages required for the local desktop pet runtime:
 
 It does not install the full Hermes Agent dependency set, optional messaging
 extras, dashboard extras, voice packages, network forwarding tooling, or
-third-party terminal integrations. Use `--full-hermes` only when you explicitly
-want this checkout to carry the full base Hermes runtime for local CLI/TUI
-sessions launched from the pet.
+third-party terminal integrations.
 
 The current MVP is macOS-first. The Tk fallback exists for basic development fallback, but the intended user experience is the native macOS overlay.
 
@@ -150,10 +146,7 @@ This installs `~/.local/bin/hermes-pet` and
 workspace through `.project-root`.
 If `venv/bin/python3` is missing in a fresh clone, the installer bootstraps it
 with `python3 -m venv venv` and installs only `PyYAML` plus `python-dotenv`.
-Use `--no-bootstrap` if you want to prepare the virtualenv manually. Use
-`--full-hermes` only when you need the full base Hermes Agent package in this
-checkout; set `HERMES_PET_EDITABLE_INSTALL=1` only for local development with
-`--full-hermes`.
+Use `--no-bootstrap` if you want to prepare the virtualenv manually.
 
 After Hermes syncs bundled skills to `~/.hermes/skills`, the agent can load the `hermes-pet` skill and manage the pet with natural-language requests such as:
 
@@ -233,10 +226,10 @@ files. It does not remove Hermes Agent itself.
 ### Runtime
 
 ```bash
-hermes pet --status
-hermes pet --background --port 8768
-hermes pet --restart --port 8768
-hermes pet --stop
+hermes-pet --status
+hermes-pet --background --port 8768
+hermes-pet --restart --port 8768
+hermes-pet --stop
 ```
 
 `--background` replaces an existing pet process if one is already running.
@@ -244,7 +237,7 @@ hermes pet --stop
 ### Local Sessions
 
 ```bash
-hermes pet --sessions
+hermes-pet --sessions
 ```
 
 The native right-click menu shows active and recent CLI/TUI sessions. Active sessions get a green dot. Left-clicking the pet focuses the active session when possible.
@@ -254,26 +247,26 @@ The native right-click menu shows active and recent CLI/TUI sessions. Active ses
 Install Hermes Pet as a macOS LaunchAgent:
 
 ```bash
-hermes pet --install-launch-agent --port 8768 --force
+hermes-pet --install-launch-agent --port 8768 --force
 ```
 
 Check:
 
 ```bash
-hermes pet --launch-agent-status
+hermes-pet --launch-agent-status
 ```
 
 Start/stop without removing the plist:
 
 ```bash
-hermes pet --start-launch-agent
-hermes pet --stop-launch-agent
+hermes-pet --start-launch-agent
+hermes-pet --stop-launch-agent
 ```
 
 Remove:
 
 ```bash
-hermes pet --uninstall-launch-agent
+hermes-pet --uninstall-launch-agent
 ```
 
 The LaunchAgent plist is written under:
@@ -292,41 +285,41 @@ format and stored under the Hermes runtime directory.
 List and search Codex Pet Share:
 
 ```bash
-hermes pet --share-list
-hermes pet --share-search "pixel"
-hermes pet --share-search "robot"
+hermes-pet --share-list
+hermes-pet --share-search "pixel"
+hermes-pet --share-search "robot"
 ```
 
 Apply artwork:
 
 ```bash
-hermes pet --share-apply "<pet-id-or-url>" --size 84
+hermes-pet --share-apply "<pet-id-or-url>" --size 84
 ```
 
 The identifier may be a share pet id or a Codex Pet Share URL. After applying,
 restart the pet if it is already running:
 
 ```bash
-hermes pet --restart --port 8768
+hermes-pet --restart --port 8768
 ```
 
 Inspect current and saved artwork:
 
 ```bash
-hermes pet --share-current
-hermes pet --share-installed
+hermes-pet --share-current
+hermes-pet --share-installed
 ```
 
 Use a saved local artwork entry:
 
 ```bash
-hermes pet --share-use-installed "<asset-id>"
+hermes-pet --share-use-installed "<asset-id>"
 ```
 
 Return to bundled Hermes artwork:
 
 ```bash
-hermes pet --share-clear
+hermes-pet --share-clear
 ```
 
 In the native right-click menu, use `Pet Artwork` to search Codex Pet Share,
@@ -386,19 +379,8 @@ Imported Codex Pet Share spritesheets provide rows for idle, running-right, runn
 Run focused checks:
 
 ```bash
-venv/bin/python3 -m py_compile hermes_cli/main.py hermes_cli/pet_overlay.py tests/hermes_cli/test_pet_overlay.py
+venv/bin/python3 -m py_compile hermes_pet/cli.py hermes_cli/pet_overlay.py
 /usr/bin/swiftc hermes_cli/assets/hermes_pet_macos.swift -o /tmp/hermes_pet_macos_test
-venv/bin/python3 -m pytest -q tests/hermes_cli/test_pet_overlay.py tests/hermes_cli/test_pet_sessions.py
-```
-
-Run the broader pet regression set:
-
-```bash
-venv/bin/python3 -m pytest -q \
-  tests/hermes_cli/test_pet_sessions.py \
-  tests/hermes_cli/test_pet_overlay.py \
-  tests/hermes_cli/test_pet_forwarder.py \
-  tests/hermes_cli/test_pet_share.py
 ```
 
 Check formatting hazards:
@@ -413,24 +395,16 @@ Run the full Hermes Pet release gate:
 bash connectors/hermes/release-check.sh
 ```
 
-The release gate checks shell syntax, Python imports, focused pet regressions,
-web/dashboard safety tests, the native AppKit helper build, the SwiftPM app
-scaffold, `git diff --check`, and installed `hermes-pet --status`.
-
-For the full publish checklist, see
-[`docs/release/hermes-distribution-checklist.md`](docs/release/hermes-distribution-checklist.md).
+The release gate checks shell syntax, Python imports, the native AppKit helper
+build, `git diff --check`, a minimal runtime smoke, and installed
+`hermes-pet --status`. In this lean public distribution the test suite is not
+included, so the gate skips pytest automatically.
 
 ## Packaging Direction
 
-Hermes Pet now has two parallel distribution tracks:
-
-1. Hermes-specific package: skill/wrapper plus `hermes pet ...` compatibility commands for existing Hermes users.
-2. Universal macOS app: future signed `.dmg` with status-bar controls, connector selection, independent login item management, and support for Hermes/OpenClaw/Codex/Claude Code/Kimi-style connectors.
-
-The default install target should not modify upstream Hermes source files. The
-existing in-repo Hermes hooks remain useful for MVP validation and local
-development, but the user-facing package should converge on the universal app
-plus a removable Hermes connector.
+This repository currently publishes only the Hermes-specific package:
+skill/wrapper plus a native macOS desktop pet for existing Hermes users. The
+default install target does not modify upstream Hermes source files.
 
 Hermes connector install/update:
 

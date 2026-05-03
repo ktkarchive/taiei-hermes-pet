@@ -16,17 +16,12 @@ Hermes Pet は Hermes Agent 用のデスクトップペットです。ブラウ�
 
 ## 概要
 
-現在の MVP は `hermes pet` コマンド群と `hermes-pet` skill wrapper を使います。長期方針は、Hermes 本体を変更しない独立 macOS アプリと薄い Hermes connector に分けることです。
-
-アーキテクチャ文書:
-
-- [`docs/architecture/hermes-pet-architecture.md`](../architecture/hermes-pet-architecture.md)
-- [`apps/macos/HermesPet`](../../apps/macos/HermesPet)
+現在の public MVP は、Hermes 本体を変更しない薄い Hermes connector と `hermes-pet` skill wrapper を使います。
 
 ローカル MVP はデフォルトで localhost のみを使います。
 
 ```bash
-hermes pet --background --port 8768
+hermes-pet --background --port 8768
 ```
 
 ## 機能
@@ -140,8 +135,6 @@ bash connectors/hermes/install.sh
 この installer は意図的に狭い範囲だけを変更します。
 
 - fresh clone に `venv/bin/python3` がない場合、`python3 -m venv venv` を実行し、pet runtime に必要な `PyYAML` と `python-dotenv` だけをインストール
-- この checkout に full base Hermes runtime も必要な場合だけ `--full-hermes` を使用
-- local development で editable install が必要な場合は `--full-hermes` と一緒に `HERMES_PET_EDITABLE_INSTALL=1` を使用
 - `~/.local/bin/hermes-pet` をインストール
 - `~/.hermes/skills/productivity/hermes-pet` をインストール
 - `.project-root` で現在の workspace を固定
@@ -179,26 +172,26 @@ uninstall はデフォルトで実行中の pet を止め、存在する
 実行管理:
 
 ```bash
-hermes pet --status
-hermes pet --background --port 8768
-hermes pet --restart --port 8768
-hermes pet --stop
+hermes-pet --status
+hermes-pet --background --port 8768
+hermes-pet --restart --port 8768
+hermes-pet --stop
 ```
 
 セッション:
 
 ```bash
-hermes pet --sessions
+hermes-pet --sessions
 ```
 
 ログイン項目:
 
 ```bash
-hermes pet --install-launch-agent --port 8768 --force
-hermes pet --launch-agent-status
-hermes pet --start-launch-agent
-hermes pet --stop-launch-agent
-hermes pet --uninstall-launch-agent
+hermes-pet --install-launch-agent --port 8768 --force
+hermes-pet --launch-agent-status
+hermes-pet --start-launch-agent
+hermes-pet --stop-launch-agent
+hermes-pet --uninstall-launch-agent
 ```
 
 plist:
@@ -214,13 +207,13 @@ Hermes Pet は同梱 Hermes アートワークを使えるほか、
 companion catalog からアニメーションアートワークを取り込めます。
 
 ```bash
-hermes pet --share-list
-hermes pet --share-search "pixel"
-hermes pet --share-apply "<pet-id-or-url>" --size 84
-hermes pet --share-current
-hermes pet --share-installed
-hermes pet --share-use-installed "<asset-id>"
-hermes pet --share-clear
+hermes-pet --share-list
+hermes-pet --share-search "pixel"
+hermes-pet --share-apply "<pet-id-or-url>" --size 84
+hermes-pet --share-current
+hermes-pet --share-installed
+hermes-pet --share-use-installed "<asset-id>"
+hermes-pet --share-clear
 ```
 
 参考サイト:
@@ -233,7 +226,7 @@ https://codex-pet-share.pages.dev/
 CLI では pet id または Codex Pet Share URL を `--share-apply` に渡せます。
 
 ```bash
-hermes pet --share-apply "https://codex-pet-share.pages.dev/#/pets/<pet-id>" --size 84
+hermes-pet --share-apply "https://codex-pet-share.pages.dev/#/pets/<pet-id>" --size 84
 ```
 
 取り込んだアートワークはこの Mac の Hermes runtime にローカル保存されます。
@@ -281,9 +274,8 @@ Codex Pet Share の他の作者が公開した pet をスクリーンショッ�
 ## 開発確認
 
 ```bash
-venv/bin/python3 -m py_compile hermes_cli/main.py hermes_cli/pet_overlay.py tests/hermes_cli/test_pet_overlay.py
+venv/bin/python3 -m py_compile hermes_pet/cli.py hermes_cli/pet_overlay.py
 /usr/bin/swiftc hermes_cli/assets/hermes_pet_macos.swift -o /tmp/hermes_pet_macos_test
-venv/bin/python3 -m pytest -q tests/hermes_cli/test_pet_overlay.py tests/hermes_cli/test_pet_sessions.py
 git diff --check
 ```
 
@@ -293,18 +285,14 @@ git diff --check
 bash connectors/hermes/release-check.sh
 ```
 
-この gate は shell syntax、Python import、pet regression、web/dashboard
-tests、AppKit helper compile、SwiftPM app scaffold build、`git diff --check`、
-インストール済み `hermes-pet --status` を確認します。
+この gate は shell syntax、Python import、AppKit helper compile、
+`git diff --check`、minimal runtime smoke、インストール済み
+`hermes-pet --status` を確認します。public lean 配布版には test suite を
+含めないため、pytest は自動的にスキップされます。
 
 ## 配布方針
 
-配布は 2 つのトラックで進めます。
-
-1. Hermes 専用パッケージ: skill/wrapper と既存の `hermes pet ...` 互換コマンド
-2. 汎用 macOS App: 将来的な署名付き `.dmg`、ステータスバー、connector 選択、独立したログイン項目、Hermes/OpenClaw/Codex/Claude Code/Kimi 系 connector 対応
-
-デフォルトのインストール経路では upstream Hermes のソースを変更しません。repo 内の Hermes hook は MVP 検証とローカル開発用として扱い、ユーザー向け配布は独立 App + 取り外し可能な Hermes connector に収束させます。
+このリポジトリは現在 Hermes 専用パッケージのみを配布します。汎用 App/DMG はこの public MVP には含まれません。デフォルトのインストール経路では upstream Hermes のソースを変更しません。
 
 ## 参考
 

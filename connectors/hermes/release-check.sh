@@ -4,7 +4,6 @@ set -euo pipefail
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
 PYTHON="${ROOT}/venv/bin/python3"
 SWIFTC="/usr/bin/swiftc"
-APP_BUILD_PATH="${HERMES_PET_APP_BUILD_PATH:-/tmp/hermes-pet-app-build}"
 HELPER_OUT="${HERMES_PET_HELPER_OUT:-/tmp/hermes_pet_macos_test}"
 
 if [ ! -x "$PYTHON" ]; then
@@ -26,47 +25,65 @@ run bash -n \
   connectors/hermes/bin/hermes-pet \
   skills/productivity/hermes-pet/scripts/petctl.sh
 
-run python3 -B -m py_compile \
-  hermes_pet/protocol.py \
-  hermes_cli/pet_protocol.py \
-  hermes_cli/pet_overlay.py \
-  hermes_cli/pet_sessions.py \
-  hermes_cli/pet_forwarder.py \
-  hermes_cli/pet_telegram_relay.py \
-  hermes_cli/main.py \
-  hermes_cli/web_server.py
+PY_COMPILE_FILES=(
+  hermes_pet/cli.py
+  hermes_pet/protocol.py
+  hermes_cli/config.py
+  hermes_cli/env_loader.py
+  hermes_cli/pet_protocol.py
+  hermes_cli/pet_overlay.py
+  hermes_cli/pet_sessions.py
+  hermes_cli/pet_share.py
+  hermes_constants.py
+  utils.py
+)
+for optional_py in hermes_cli/pet_forwarder.py hermes_cli/pet_telegram_relay.py; do
+  if [ -f "$optional_py" ]; then
+    PY_COMPILE_FILES+=("$optional_py")
+  fi
+done
+run python3 -B -m py_compile "${PY_COMPILE_FILES[@]}"
 
-run "$PYTHON" -m pytest -q -o addopts='' \
-  tests/hermes_cli/test_pet_protocol.py \
-  tests/hermes_cli/test_pet_sessions.py \
-  tests/hermes_cli/test_pet_overlay.py \
-  tests/hermes_cli/test_pet_forwarder.py \
-  tests/hermes_cli/test_pet_share.py \
-  tests/hermes_cli/test_pet_telegram_relay.py
+if [ -d tests/hermes_cli ] && [ "${HERMES_PET_SKIP_TESTS:-0}" != "1" ]; then
+  run "$PYTHON" -m pytest -q -o addopts='' \
+    tests/hermes_cli/test_pet_protocol.py \
+    tests/hermes_cli/test_pet_sessions.py \
+    tests/hermes_cli/test_pet_overlay.py \
+    tests/hermes_cli/test_pet_forwarder.py \
+    tests/hermes_cli/test_pet_share.py \
+    tests/hermes_cli/test_pet_telegram_relay.py
 
-run "$PYTHON" -m pytest -q -o addopts='' \
-  tests/hermes_cli/test_web_server.py \
-  tests/hermes_cli/test_web_server_host_header.py \
-  tests/hermes_cli/test_dashboard_browser_safe_imports.py
+  run "$PYTHON" -m pytest -q -o addopts='' \
+    tests/hermes_cli/test_web_server.py \
+    tests/hermes_cli/test_web_server_host_header.py \
+    tests/hermes_cli/test_dashboard_browser_safe_imports.py
+else
+  echo "Skipping pytest; tests are not included in this lean distribution."
+fi
 
 PUBLIC_FORBIDDEN_PATTERN='Tailscale|tailscale|tailnet|--tailscale|Telegram|telegram|Discord|discord|remote-env|Remote Pets|private-network|chat-relay|relay setup|relay tools|--relay-test|relay-test|원격|リモート|远程'
 PUBLIC_SURFACE_FILES=(
   README.md
   NOTICE.md
   docs/i18n
-  docs/release
   connectors/README.md
   connectors/hermes/README.md
   skills/productivity/hermes-pet
-  apps/macos/HermesPet/README.md
 )
+EXISTING_PUBLIC_SURFACE_FILES=()
+for public_path in "${PUBLIC_SURFACE_FILES[@]}"; do
+  if [ -e "$public_path" ]; then
+    EXISTING_PUBLIC_SURFACE_FILES+=("$public_path")
+  fi
+done
 
-if rg -n -I "$PUBLIC_FORBIDDEN_PATTERN" "${PUBLIC_SURFACE_FILES[@]}"; then
+if [ "${#EXISTING_PUBLIC_SURFACE_FILES[@]}" -gt 0 ] && \
+  rg -n -I "$PUBLIC_FORBIDDEN_PATTERN" "${EXISTING_PUBLIC_SURFACE_FILES[@]}"; then
   echo "Public macOS MVP docs still expose private-network or chat-relay setup." >&2
   exit 1
 fi
 
-if "$PYTHON" -m hermes_cli.main pet --help | rg -n -I "$PUBLIC_FORBIDDEN_PATTERN"; then
+if "$PYTHON" -m hermes_pet.cli --help | rg -n -I "$PUBLIC_FORBIDDEN_PATTERN"; then
   echo "Public hermes pet help still exposes private-network or chat-relay setup." >&2
   exit 1
 fi
@@ -79,21 +96,15 @@ if [ "${HERMES_PET_SKIP_MINIMAL_SMOKE:-0}" != "1" ]; then
     "PyYAML>=6.0.2,<7" \
     "python-dotenv>=1.2.1,<2"
   run env HERMES_HOME="${MINIMAL_SMOKE_DIR}/home" \
-    "${MINIMAL_SMOKE_DIR}/venv/bin/python3" -m hermes_cli.main pet --status
+    "${MINIMAL_SMOKE_DIR}/venv/bin/python3" -m hermes_pet.cli --status
   run env HERMES_HOME="${MINIMAL_SMOKE_DIR}/home" \
-    "${MINIMAL_SMOKE_DIR}/venv/bin/python3" -m hermes_cli.main pet --share-current
+    "${MINIMAL_SMOKE_DIR}/venv/bin/python3" -m hermes_pet.cli --share-current
 fi
 
 if [ -x "$SWIFTC" ]; then
   run "$SWIFTC" hermes_cli/assets/hermes_pet_macos.swift -o "$HELPER_OUT"
 else
   echo "Skipping AppKit helper compile; swiftc not found at ${SWIFTC}" >&2
-fi
-
-if command -v swift >/dev/null 2>&1; then
-  run swift build --package-path apps/macos/HermesPet --build-path "$APP_BUILD_PATH"
-else
-  echo "Skipping SwiftPM app build; swift not found" >&2
 fi
 
 run git diff --check

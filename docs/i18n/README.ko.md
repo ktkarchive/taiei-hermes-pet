@@ -15,17 +15,12 @@ Hermes Agent용 데스크탑 펫입니다. Hermes Pet은 브라우저 안이 아
 
 ## 개요
 
-Hermes Pet은 Hermes Agent의 화면 위 컴패니언입니다. 웹 대시보드 위젯이 아니며, 투명한 always-on-top macOS 패널로 실행됩니다. 현재 MVP는 `hermes pet` CLI와 `hermes-pet` 스킬 wrapper를 함께 사용하지만, 장기 구조는 Hermes 원판을 수정하지 않는 독립 macOS 앱 + 얇은 Hermes connector입니다.
-
-아키텍처 문서:
-
-- [`docs/architecture/hermes-pet-architecture.md`](../architecture/hermes-pet-architecture.md)
-- [`apps/macos/HermesPet`](../../apps/macos/HermesPet)
+Hermes Pet은 Hermes Agent의 화면 위 컴패니언입니다. 웹 대시보드 위젯이 아니며, 투명한 always-on-top macOS 패널로 실행됩니다. 현재 public MVP는 Hermes 원판을 수정하지 않는 얇은 Hermes connector와 `hermes-pet` 스킬 wrapper를 사용합니다.
 
 기본 로컬 MVP는 localhost 전용입니다.
 
 ```bash
-hermes pet --background --port 8768
+hermes-pet --background --port 8768
 ```
 
 ## 주요 기능
@@ -116,9 +111,7 @@ bash connectors/hermes/install.sh
 workspace를 고정합니다.
 fresh clone에서 `venv/bin/python3`가 없으면 installer가 `python3 -m venv venv`
 후 pet runtime에 필요한 `PyYAML`, `python-dotenv`만 설치합니다. 직접 준비하고
-싶으면 `--no-bootstrap`을 사용하세요. 이 checkout에서 full base Hermes runtime까지
-설치해야 할 때만 `--full-hermes`를 사용하고, local development에서만
-`HERMES_PET_EDITABLE_INSTALL=1`을 함께 사용할 수 있습니다.
+싶으면 `--no-bootstrap`을 사용하세요.
 기본 설치/삭제는 위 표준 경로만 사용하며, 커스텀 경로는
 `HERMES_PET_ALLOW_CUSTOM_INSTALL=1`이 있어야 합니다. 그래도 `$HOME`, `/`,
 `/tmp`, `hermes-pet`으로 끝나지 않는 경로는 거부합니다.
@@ -191,26 +184,26 @@ Hermes Agent 자체는 삭제하지 않습니다.
 런타임:
 
 ```bash
-hermes pet --status
-hermes pet --background --port 8768
-hermes pet --restart --port 8768
-hermes pet --stop
+hermes-pet --status
+hermes-pet --background --port 8768
+hermes-pet --restart --port 8768
+hermes-pet --stop
 ```
 
 세션:
 
 ```bash
-hermes pet --sessions
+hermes-pet --sessions
 ```
 
 로그인 자동 실행:
 
 ```bash
-hermes pet --install-launch-agent --port 8768 --force
-hermes pet --launch-agent-status
-hermes pet --start-launch-agent
-hermes pet --stop-launch-agent
-hermes pet --uninstall-launch-agent
+hermes-pet --install-launch-agent --port 8768 --force
+hermes-pet --launch-agent-status
+hermes-pet --start-launch-agent
+hermes-pet --stop-launch-agent
+hermes-pet --uninstall-launch-agent
 ```
 
 LaunchAgent plist:
@@ -224,13 +217,13 @@ LaunchAgent plist:
 Codex Pet Share에서 펫 아트워크를 가져옵니다.
 
 ```bash
-hermes pet --share-list
-hermes pet --share-search "pixel"
-hermes pet --share-apply "<pet-id-or-url>" --size 84
-hermes pet --share-current
-hermes pet --share-installed
-hermes pet --share-use-installed "<asset-id>"
-hermes pet --share-clear
+hermes-pet --share-list
+hermes-pet --share-search "pixel"
+hermes-pet --share-apply "<pet-id-or-url>" --size 84
+hermes-pet --share-current
+hermes-pet --share-installed
+hermes-pet --share-use-installed "<asset-id>"
+hermes-pet --share-clear
 ```
 
 Codex Pet Share 사이트:
@@ -243,7 +236,7 @@ https://codex-pet-share.pages.dev/
 CLI에서는 pet id 또는 Codex Pet Share URL을 그대로 `--share-apply`에 넣을 수 있습니다.
 
 ```bash
-hermes pet --share-apply "https://codex-pet-share.pages.dev/#/pets/<pet-id>" --size 84
+hermes-pet --share-apply "https://codex-pet-share.pages.dev/#/pets/<pet-id>" --size 84
 ```
 
 가져온 아트워크는 이 Mac의 Hermes runtime 아래에 로컬로 저장됩니다. Codex Pet
@@ -291,9 +284,8 @@ Share의 다른 제작자가 만든 펫을 스크린샷, 데모, 배포 문서�
 ## 개발 검증
 
 ```bash
-venv/bin/python3 -m py_compile hermes_cli/main.py hermes_cli/pet_overlay.py tests/hermes_cli/test_pet_overlay.py
+venv/bin/python3 -m py_compile hermes_pet/cli.py hermes_cli/pet_overlay.py
 /usr/bin/swiftc hermes_cli/assets/hermes_pet_macos.swift -o /tmp/hermes_pet_macos_test
-venv/bin/python3 -m pytest -q tests/hermes_cli/test_pet_overlay.py tests/hermes_cli/test_pet_sessions.py
 git diff --check
 ```
 
@@ -303,18 +295,14 @@ git diff --check
 bash connectors/hermes/release-check.sh
 ```
 
-이 검증은 shell syntax, Python import, pet regression, web/dashboard test,
-AppKit helper compile, SwiftPM app scaffold build, `git diff --check`, 설치된
-`hermes-pet --status`를 확인합니다.
+이 검증은 shell syntax, Python import, AppKit helper compile,
+`git diff --check`, minimal runtime smoke, 설치된 `hermes-pet --status`를
+확인합니다. public lean 배포판에는 테스트 suite를 포함하지 않으므로 pytest는
+자동으로 건너뜁니다.
 
 ## 배포 방향
 
-배포는 두 트랙을 병행합니다.
-
-1. Hermes 전용 패키지: 기존 사용자를 위한 skill/wrapper와 `hermes pet ...` 호환 명령
-2. 범용 macOS 앱: 향후 signed `.dmg`, 상태표시줄, connector 선택, 독립 로그인 항목, Hermes/OpenClaw/Codex/Claude Code/Kimi 계열 connector 지원
-
-기본 배포 경로는 Hermes upstream source를 수정하지 않는 방식이어야 합니다. 현재 repo 내부 Hermes hook은 MVP 검증과 로컬 개발용으로 유지하고, 사용자 배포는 독립 앱 + 제거 가능한 Hermes connector로 수렴시킵니다.
+현재 이 저장소는 Hermes 전용 패키지만 배포합니다. 범용 app/DMG는 이 public MVP에 포함하지 않습니다. 기본 배포 경로는 Hermes upstream source를 수정하지 않습니다.
 
 ## 참고
 

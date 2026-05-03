@@ -7,9 +7,9 @@ if [ -z "$PROJECT_ROOT" ] && [ -f "$PROJECT_ROOT_FILE" ]; then
   PROJECT_ROOT="$(sed -n '1p' "$PROJECT_ROOT_FILE")"
 fi
 
-if [ -n "$PROJECT_ROOT" ] && [ -x "${PROJECT_ROOT}/venv/bin/python3" ] && [ -f "${PROJECT_ROOT}/hermes_cli/main.py" ]; then
+if [ -n "$PROJECT_ROOT" ] && [ -x "${PROJECT_ROOT}/venv/bin/python3" ] && [ -f "${PROJECT_ROOT}/hermes_pet/cli.py" ]; then
   cd "$PROJECT_ROOT"
-  exec "${PROJECT_ROOT}/venv/bin/python3" -m hermes_cli.main pet "$@"
+  exec "${PROJECT_ROOT}/venv/bin/python3" -m hermes_pet.cli "$@"
 fi
 
 exec hermes pet "$@"
