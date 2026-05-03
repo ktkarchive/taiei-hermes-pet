@@ -27,12 +27,12 @@ run bash -n \
 
 PY_COMPILE_FILES=(
   hermes_pet/cli.py
+  hermes_pet/constants.py
   hermes_pet/protocol.py
   hermes_cli/pet_protocol.py
   hermes_cli/pet_overlay.py
   hermes_cli/pet_sessions.py
   hermes_cli/pet_share.py
-  hermes_constants.py
 )
 for optional_py in hermes_cli/pet_forwarder.py; do
   if [ -f "$optional_py" ]; then

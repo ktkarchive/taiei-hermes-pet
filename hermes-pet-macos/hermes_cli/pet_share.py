@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
-from hermes_constants import get_hermes_home
+from hermes_pet.constants import get_hermes_home
 
 CODEX_PET_SHARE_URL = "https://codex-pet-share.pages.dev"
 CODEX_PET_SHARE_API_BASE = "https://ihzwckyzfcuktrljwpha.supabase.co/functions/v1/petshare"

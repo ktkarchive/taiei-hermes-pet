@@ -1,4 +1,4 @@
-"""Minimal Hermes path helpers used by the standalone Hermes Pet package."""
+"""Minimal path helpers for the standalone Hermes Pet package."""
 
 from __future__ import annotations
 

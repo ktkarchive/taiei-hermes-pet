@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import threading
 import time
@@ -16,7 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from hermes_constants import get_hermes_home
+from hermes_pet.constants import get_hermes_home
 
 REGISTRY_FILENAME = "pet_sessions.json"
 LOCK_FILENAME = "pet_sessions.lock"
@@ -37,6 +38,101 @@ _TERM_PROGRAM_APPS = {
     "ghostty": ("Ghostty", "com.mitchellh.ghostty"),
     "cmux": ("cmux", "com.cmuxterm.app"),
 }
+
+
+def _normalize_ps_tty(value: str) -> str:
+    tty = str(value or "").strip()
+    if not tty or tty == "??":
+        return ""
+    return tty if tty.startswith("/dev/") else f"/dev/{tty}"
+
+
+def _mode_from_process_command(command: str) -> Optional[str]:
+    text = " ".join(str(command or "").split())
+    lower = text.lower()
+    if not text:
+        return None
+    if any(skip in lower for skip in ("hermes-pet", "hermes_pet", "pet_overlay", "taiei-hermes-pet")):
+        return None
+    if "hermes" not in lower and "hermes_cli.main" not in lower:
+        return None
+    if "--tui" in lower or " tui" in lower or lower.endswith(" tui"):
+        return "tui"
+    return None
+
+
+def _discover_process_sessions(now: Optional[float] = None) -> list[dict[str, Any]]:
+    if sys.platform != "darwin":
+        return []
+    try:
+        result = subprocess.run(
+            ["ps", "-axo", "pid=,ppid=,tty=,command="],
+            capture_output=True,
+            text=True,
+            timeout=2.0,
+            check=False,
+        )
+    except Exception:
+        return []
+    if result.returncode != 0:
+        return []
+
+    discovered: list[dict[str, Any]] = []
+    seen: set[int] = set()
+    timestamp = time.time() if now is None else now
+    for raw_line in (result.stdout or "").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        parts = line.split(None, 3)
+        if len(parts) < 4:
+            continue
+        try:
+            pid = int(parts[0])
+            ppid = int(parts[1])
+        except ValueError:
+            continue
+        if pid == os.getpid() or pid in seen:
+            continue
+        tty = _normalize_ps_tty(parts[2])
+        command = parts[3]
+        mode = _mode_from_process_command(command)
+        if mode is None:
+            continue
+        seen.add(pid)
+        session_id = f"process-{mode}-{pid}"
+        app_name = "Terminal" if tty else ""
+        bundle_id = "com.apple.Terminal" if tty else ""
+        discovered.append({
+            "id": f"{pid}:{mode}:{session_id}",
+            "mode": mode,
+            "session_id": session_id,
+            "label": f"Hermes {mode.upper()}",
+            "cwd": "",
+            "command": command,
+            "pid": pid,
+            "ppid": ppid,
+            "terminal": {
+                "tty": tty,
+                "term_program": "",
+                "term_session_id": "",
+                "iterm_session_id": "",
+                "wezterm_pane": "",
+                "kitty_window_id": "",
+                "cmux_port": "",
+                "cmux_port_end": "",
+                "cmux_socket_path": "",
+                "tmux": "",
+                "vscode_pid": "",
+                "terminal_app": app_name,
+                "terminal_bundle_id": bundle_id,
+            },
+            "active": True,
+            "started_at": timestamp,
+            "updated_at": timestamp,
+            "discovered": True,
+        })
+    return discovered
 
 
 def _terminal_context() -> dict[str, Any]:
@@ -243,14 +339,30 @@ def list_active_pet_sessions(
     stale_after: float = DEFAULT_STALE_AFTER_SECONDS,
 ) -> list[dict[str, Any]]:
     now = time.time()
+    discovered = _discover_process_sessions(now)
 
     def mutate(data: dict[str, Any]) -> list[dict[str, Any]]:
         _prune_sessions(data, now, stale_after)
         sessions = data.get("sessions") or {}
         if not isinstance(sessions, dict):
-            return []
+            registry_entries: list[dict[str, Any]] = []
+        else:
+            registry_entries = [
+                dict(entry, active=True)
+                for entry in sessions.values()
+                if isinstance(entry, dict)
+            ]
+        seen = {
+            (int(entry.get("pid") or 0), str(entry.get("mode") or ""))
+            for entry in registry_entries
+        }
+        merged = registry_entries + [
+            entry
+            for entry in discovered
+            if (int(entry.get("pid") or 0), str(entry.get("mode") or "")) not in seen
+        ]
         return sorted(
-            [dict(entry, active=True) for entry in sessions.values() if isinstance(entry, dict)],
+            merged,
             key=lambda item: (str(item.get("mode") or ""), str(item.get("session_id") or "")),
         )
 
@@ -271,13 +383,24 @@ def list_pet_menu_sessions(
     """
     now = time.time()
     clean_limit = max(1, min(int(limit or DEFAULT_RECENT_LIMIT), 50))
+    discovered = _discover_process_sessions(now)
 
     def mutate(data: dict[str, Any]) -> list[dict[str, Any]]:
         _prune_sessions(data, now, stale_after)
         _sync_recent_active_flags(data)
         recent = _recent_sessions(data)
         deduped: dict[str, dict[str, Any]] = {}
-        for entry in recent.values():
+        values = [entry for entry in recent.values() if isinstance(entry, dict)]
+        known = {
+            (int(entry.get("pid") or 0), str(entry.get("mode") or ""))
+            for entry in values
+        }
+        values.extend(
+            entry
+            for entry in discovered
+            if (int(entry.get("pid") or 0), str(entry.get("mode") or "")) not in known
+        )
+        for entry in values:
             if not isinstance(entry, dict):
                 continue
             key = _session_display_key(entry)

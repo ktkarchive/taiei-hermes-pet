@@ -15,7 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
 def _load_environment() -> None:
     try:
         from dotenv import load_dotenv
-        from hermes_constants import get_hermes_home
+        from hermes_pet.constants import get_hermes_home
 
         user_env = get_hermes_home() / ".env"
         if user_env.exists():

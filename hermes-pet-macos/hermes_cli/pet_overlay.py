@@ -36,7 +36,7 @@ except Exception:  # Tk is only needed for the non-macOS development fallback.
     tk = None  # type: ignore[assignment]
     Menu = None  # type: ignore[assignment]
 
-from hermes_constants import get_hermes_home
+from hermes_pet.constants import get_hermes_home
 from hermes_pet.protocol import (
     CMUX_SESSION_MAP_FILENAME,
     LOCAL_SOURCE_ID,
@@ -631,7 +631,7 @@ def _launchd_user_home() -> Path:
 def _pet_profile_suffix() -> str:
     home = get_hermes_home().resolve()
     try:
-        from hermes_constants import get_default_hermes_root
+        from hermes_pet.constants import get_default_hermes_root
 
         default = get_default_hermes_root().resolve()
         if home == default:
@@ -1493,16 +1493,12 @@ def _launch_hermes_terminal(*, tui: bool) -> tuple[bool, str]:
 
 def _hermes_launch_script_lines(*, tui: bool, session_id: Optional[str]) -> tuple[str, list[str]]:
     kind = "tui" if tui else "cli"
-    python_exe = _hermes_python_executable()
     project_root = Path(__file__).resolve().parents[1]
-    if (project_root / "hermes_cli" / "main.py").exists():
-        args = [str(python_exe), "-m", "hermes_cli.main"]
-    else:
-        args = ["hermes"]
+    args = ['"$HERMES_CMD"']
     if tui:
         args.append("--tui")
     if session_id:
-        args.extend(["--resume", session_id])
+        args.extend(["--resume", shlex.quote(session_id)])
 
     exports = []
     hermes_home = os.getenv("HERMES_HOME")
@@ -1518,12 +1514,18 @@ def _hermes_launch_script_lines(*, tui: bool, session_id: Optional[str]) -> tupl
         "set -e",
         "unset PYTHONPATH",
         "unset PYTHONHOME",
+        "unset VIRTUAL_ENV",
         *exports,
-        f"export VIRTUAL_ENV={shlex.quote(str(project_root / 'venv'))}",
-        'export PATH="$VIRTUAL_ENV/bin:$PATH"',
-        f"cd {shlex.quote(str(project_root))}",
+        'export PATH="$HOME/.local/bin:$HOME/.hermes/hermes-agent/venv/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"',
+        'HERMES_CMD="${HERMES_PET_HERMES_CMD:-}"',
+        'if [ -z "$HERMES_CMD" ]; then HERMES_CMD="$(command -v hermes || true)"; fi',
+        'if [ -z "$HERMES_CMD" ]; then',
+        '  echo "Hermes command not found. Install Hermes Agent first, or set HERMES_PET_HERMES_CMD to the hermes executable path." >&2',
+        "  exit 127",
+        "fi",
+        'cd "${HERMES_PET_HERMES_CWD:-$HOME}"',
         f"printf '\\033]0;%s\\007' {shlex.quote(title)}",
-        f"exec {' '.join(shlex.quote(arg) for arg in args)}",
+        f"exec {' '.join(args)}",
         "",
     ]
 
