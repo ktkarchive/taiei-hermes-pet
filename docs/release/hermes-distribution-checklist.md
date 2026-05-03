@@ -38,20 +38,19 @@ Expected:
 - `~/.local/bin/hermes-pet` exists;
 - `~/.hermes/skills/productivity/hermes-pet/.project-root` points to the release workspace;
 - live local pet binds to `127.0.0.1:8768`.
-- no public install or README path requires private-network relay tools.
+- no public install or README path requires network forwarding or chat
+  integration tooling.
 
 ## Runtime
 
 ```bash
 hermes-pet --background --port 8768
 curl -fsS http://127.0.0.1:8768/health
-hermes-pet --relay-test --relay-test-message release-check
 ```
 
 Expected:
 
 - health returns `{"ok":true,"name":"hermes-pet"}`;
-- relay-test shows a desktop notification badge;
 - `~/.hermes/runtime/pet_overlay.json` is `0600`;
 - no token appears in `ps` command output.
 
@@ -63,7 +62,7 @@ bash connectors/hermes/release-check.sh
 
 Expected:
 
-- public docs do not describe private-network relay setup;
+- public docs do not describe network forwarding or chat integration setup;
 - public `hermes-pet --help` only shows local macOS pet commands.
 
 ## Artwork

@@ -8,6 +8,7 @@ PORT="${HERMES_PET_PORT:-8768}"
 START_PET=1
 BIN_DIR="${HERMES_PET_BIN_DIR:-${HOME}/.local/bin}"
 SKILL_DIR="${HERMES_PET_SKILL_DIR:-${HOME}/.hermes/skills/productivity/hermes-pet}"
+INSTALL_ARGS=()
 
 usage() {
   cat <<'EOF'
@@ -22,6 +23,7 @@ Options:
   --branch NAME    Git branch to checkout
   --port PORT      Local pet port, default 8768
   --no-start       Install only; do not start the pet
+  --full-hermes    Install the repository's full base Hermes package
   -h, --help       Show this help
 
 Environment:
@@ -50,6 +52,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --no-start)
       START_PET=0
+      shift
+      ;;
+    --full-hermes)
+      INSTALL_ARGS+=("--full-hermes")
       shift
       ;;
     -h|--help)
@@ -107,7 +113,7 @@ else
   exit 1
 fi
 
-bash "${INSTALL_DIR}/connectors/hermes/install.sh"
+bash "${INSTALL_DIR}/connectors/hermes/install.sh" "${INSTALL_ARGS[@]}"
 
 if [ "$START_PET" -eq 1 ]; then
   "${BIN_DIR}/hermes-pet" --background --port "$PORT"

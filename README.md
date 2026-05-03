@@ -52,19 +52,23 @@ hermes pet --background --port 8768
 
 ## Requirements
 
-- macOS for the native screen pet
 - macOS
 - Apple Command Line Tools (`git`, `swiftc`, and system build tools)
 - Python 3.11 or newer
 - Internet access for first install and optional Codex Pet Share artwork downloads
 - Optional: cmux, only if you want Hermes sessions opened/focused through cmux
 
-The installer creates a project `venv/` and installs this repository's base
-Hermes Agent runtime package from `pyproject.toml`. That footprint is currently
-needed when the pet launches Hermes CLI/TUI sessions from this checkout so those
-sessions include the pet event hooks. Optional extras such as messaging,
-dashboard, voice, platform connectors, and third-party terminal integrations
-are not installed by the macOS Pet connector.
+The default installer creates a project `venv/` and installs only the Python
+packages required for the local desktop pet runtime:
+
+- `PyYAML>=6.0.2,<7`
+- `python-dotenv>=1.2.1,<2`
+
+It does not install the full Hermes Agent dependency set, optional messaging
+extras, dashboard extras, voice packages, network forwarding tooling, or
+third-party terminal integrations. Use `--full-hermes` only when you explicitly
+want this checkout to carry the full base Hermes runtime for local CLI/TUI
+sessions launched from the pet.
 
 The current MVP is macOS-first. The Tk fallback exists for basic development fallback, but the intended user experience is the native macOS overlay.
 
@@ -145,9 +149,11 @@ This installs `~/.local/bin/hermes-pet` and
 `~/.hermes/skills/productivity/hermes-pet`, with the skill pinned to this
 workspace through `.project-root`.
 If `venv/bin/python3` is missing in a fresh clone, the installer bootstraps it
-with `python3 -m venv venv` and `venv/bin/python3 -m pip install .`. Use
-`--no-bootstrap` if you want to prepare the virtualenv manually, or set
-`HERMES_PET_EDITABLE_INSTALL=1` for local development.
+with `python3 -m venv venv` and installs only `PyYAML` plus `python-dotenv`.
+Use `--no-bootstrap` if you want to prepare the virtualenv manually. Use
+`--full-hermes` only when you need the full base Hermes Agent package in this
+checkout; set `HERMES_PET_EDITABLE_INSTALL=1` only for local development with
+`--full-hermes`.
 
 After Hermes syncs bundled skills to `~/.hermes/skills`, the agent can load the `hermes-pet` skill and manage the pet with natural-language requests such as:
 
@@ -369,8 +375,8 @@ Imported Codex Pet Share spritesheets provide rows for idle, running-right, runn
 ## Safety Model
 
 - Local CLI/TUI mode binds to `127.0.0.1` by default.
-- The public macOS MVP installer does not require private-network or chat-relay
-  tooling.
+- The public macOS MVP installer does not require network forwarding or chat
+  integration tooling.
 - Runtime state files are written with private user-only permissions where they
   contain process or session metadata.
 - LaunchAgent install/remove is a persistent local setting and should be user-approved.

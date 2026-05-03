@@ -13,4 +13,4 @@ pet artwork discoverable. Imported artwork should retain its title and author
 metadata when shown in demos, screenshots, or downstream distributions.
 
 The public macOS MVP binds only to `127.0.0.1` by default and does not require
-private-network relay tools.
+network forwarding tools.

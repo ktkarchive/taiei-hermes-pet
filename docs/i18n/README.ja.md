@@ -139,8 +139,9 @@ bash connectors/hermes/install.sh
 
 この installer は意図的に狭い範囲だけを変更します。
 
-- fresh clone に `venv/bin/python3` がない場合、`python3 -m venv venv` と `venv/bin/python3 -m pip install .` で自動 bootstrap
-- local development で editable install が必要な場合は `HERMES_PET_EDITABLE_INSTALL=1` を使用
+- fresh clone に `venv/bin/python3` がない場合、`python3 -m venv venv` を実行し、pet runtime に必要な `PyYAML` と `python-dotenv` だけをインストール
+- この checkout に full base Hermes runtime も必要な場合だけ `--full-hermes` を使用
+- local development で editable install が必要な場合は `--full-hermes` と一緒に `HERMES_PET_EDITABLE_INSTALL=1` を使用
 - `~/.local/bin/hermes-pet` をインストール
 - `~/.hermes/skills/productivity/hermes-pet` をインストール
 - `.project-root` で現在の workspace を固定
@@ -273,7 +274,7 @@ Codex Pet Share の他の作者が公開した pet をスクリーンショッ�
 ## 安全モデル
 
 - デフォルトは `127.0.0.1`
-- public macOS MVP installer は private-network relay tool を必要としません。
+- public macOS MVP installer はネットワーク転送やチャット連携ツールを必要としません。
 - runtime 状態ファイルはプロセス/セッション metadata を含む場合、ユーザー専用権限で保存します。
 - LaunchAgent のインストール/削除はユーザー承認後
 

@@ -115,9 +115,10 @@ bash connectors/hermes/install.sh
 `~/.hermes/skills/productivity/hermes-pet`을 설치하고, `.project-root`로 현재
 workspace를 고정합니다.
 fresh clone에서 `venv/bin/python3`가 없으면 installer가 `python3 -m venv venv`
-및 `venv/bin/python3 -m pip install .`로 자동 bootstrap합니다. 직접 준비하고
-싶으면 `--no-bootstrap`을 사용하고, local development에서는
-`HERMES_PET_EDITABLE_INSTALL=1`을 사용할 수 있습니다.
+후 pet runtime에 필요한 `PyYAML`, `python-dotenv`만 설치합니다. 직접 준비하고
+싶으면 `--no-bootstrap`을 사용하세요. 이 checkout에서 full base Hermes runtime까지
+설치해야 할 때만 `--full-hermes`를 사용하고, local development에서만
+`HERMES_PET_EDITABLE_INSTALL=1`을 함께 사용할 수 있습니다.
 기본 설치/삭제는 위 표준 경로만 사용하며, 커스텀 경로는
 `HERMES_PET_ALLOW_CUSTOM_INSTALL=1`이 있어야 합니다. 그래도 `$HOME`, `/`,
 `/tmp`, `hermes-pet`으로 끝나지 않는 경로는 거부합니다.
@@ -283,7 +284,7 @@ Share의 다른 제작자가 만든 펫을 스크린샷, 데모, 배포 문서�
 ## 안전 원칙
 
 - 기본은 `127.0.0.1`
-- 공개 macOS MVP installer는 private-network relay tool을 요구하지 않습니다.
+- 공개 macOS MVP installer는 네트워크 포워딩이나 채팅 연동 도구를 요구하지 않습니다.
 - runtime 상태 파일은 프로세스/세션 metadata를 담을 때 사용자 전용 권한으로 저장합니다.
 - LaunchAgent 설치/삭제는 사용자 승인 후 진행
 

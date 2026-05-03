@@ -33,7 +33,7 @@ Keep local MVP usage localhost-only:
 hermes pet --background --port 8768
 ```
 
-The public macOS MVP does not require private-network relay tools. Keep the
+The public macOS MVP does not require network forwarding tools. Keep the
 desktop pet on `127.0.0.1`.
 
 ## Helper

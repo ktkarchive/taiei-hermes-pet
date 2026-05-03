@@ -138,8 +138,9 @@ bash connectors/hermes/install.sh
 
 此安装脚本只做有限的事情:
 
-- 如果 fresh clone 中缺少 `venv/bin/python3`，自动运行 `python3 -m venv venv` 和 `venv/bin/python3 -m pip install .`
-- 本地开发如需 editable install，可设置 `HERMES_PET_EDITABLE_INSTALL=1`
+- 如果 fresh clone 中缺少 `venv/bin/python3`，自动运行 `python3 -m venv venv`，并只安装 pet runtime 需要的 `PyYAML` 和 `python-dotenv`
+- 只有当此 checkout 也需要完整 base Hermes runtime 时才使用 `--full-hermes`
+- 本地开发如需 editable install，可与 `--full-hermes` 一起设置 `HERMES_PET_EDITABLE_INSTALL=1`
 - 安装 `~/.local/bin/hermes-pet`
 - 安装 `~/.hermes/skills/productivity/hermes-pet`
 - 写入 `.project-root`，让 skill 指向当前工作区
@@ -271,7 +272,7 @@ Codex Pet Share 上其他创作者发布的宠物，请尽量保留宠物名称�
 ## 安全模型
 
 - 默认绑定 `127.0.0.1`
-- public macOS MVP installer 不需要 private-network relay 工具。
+- public macOS MVP installer 不需要网络转发或聊天集成工具。
 - runtime 状态文件在包含进程或会话 metadata 时使用用户私有权限保存。
 - LaunchAgent 安装/移除需要用户同意
 

@@ -10655,12 +10655,12 @@ Examples:
     pet_manage.add_argument(
         "--token-status",
         action="store_true",
-        help="Show the persistent Hermes Pet relay token file status",
+        help=argparse.SUPPRESS,
     )
     pet_manage.add_argument(
         "--relay-test",
         action="store_true",
-        help="Send a test event to the configured Hermes Pet relay and exit",
+        help=argparse.SUPPRESS,
     )
     pet_manage.add_argument(
         "--stop",
@@ -10786,20 +10786,17 @@ Examples:
     pet_parser.add_argument(
         "--token",
         default=None,
-        help=(
-            "Relay token for POST events. Defaults to HERMES_PET_RELAY_TOKEN "
-            "or a fresh token for this run."
-        ),
+        help=argparse.SUPPRESS,
     )
     pet_parser.add_argument(
         "--use-token-file",
         action="store_true",
-        help="Use or create the persistent relay token file under the Hermes runtime directory",
+        help=argparse.SUPPRESS,
     )
     pet_parser.add_argument(
         "--rotate-token",
         action="store_true",
-        help="Rotate the persistent relay token file; combine with --background to restart with it",
+        help=argparse.SUPPRESS,
     )
     pet_parser.add_argument(
         "--label",
@@ -10852,7 +10849,7 @@ Examples:
     pet_parser.add_argument(
         "--relay-test-message",
         default="relay test",
-        help="Message to show for --relay-test",
+        help=argparse.SUPPRESS,
     )
     pet_parser.add_argument(
         "--telegram-bot-token",

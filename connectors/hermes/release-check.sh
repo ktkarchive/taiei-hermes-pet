@@ -49,7 +49,7 @@ run "$PYTHON" -m pytest -q -o addopts='' \
   tests/hermes_cli/test_web_server_host_header.py \
   tests/hermes_cli/test_dashboard_browser_safe_imports.py
 
-PUBLIC_FORBIDDEN_PATTERN='Tailscale|tailscale|tailnet|--tailscale|Telegram|telegram|Discord|discord|remote-env|Remote Pets|원격|リモート|远程'
+PUBLIC_FORBIDDEN_PATTERN='Tailscale|tailscale|tailnet|--tailscale|Telegram|telegram|Discord|discord|remote-env|Remote Pets|private-network|chat-relay|relay setup|relay tools|--relay-test|relay-test|원격|リモート|远程'
 PUBLIC_SURFACE_FILES=(
   README.md
   NOTICE.md
@@ -69,6 +69,19 @@ fi
 if "$PYTHON" -m hermes_cli.main pet --help | rg -n -I "$PUBLIC_FORBIDDEN_PATTERN"; then
   echo "Public hermes pet help still exposes private-network or chat-relay setup." >&2
   exit 1
+fi
+
+MINIMAL_SMOKE_DIR="${HERMES_PET_MINIMAL_SMOKE_DIR:-/tmp/hermes-pet-minimal-release-check}"
+if [ "${HERMES_PET_SKIP_MINIMAL_SMOKE:-0}" != "1" ]; then
+  run rm -rf "$MINIMAL_SMOKE_DIR"
+  run python3 -m venv "${MINIMAL_SMOKE_DIR}/venv"
+  run "${MINIMAL_SMOKE_DIR}/venv/bin/python3" -m pip install --disable-pip-version-check \
+    "PyYAML>=6.0.2,<7" \
+    "python-dotenv>=1.2.1,<2"
+  run env HERMES_HOME="${MINIMAL_SMOKE_DIR}/home" \
+    "${MINIMAL_SMOKE_DIR}/venv/bin/python3" -m hermes_cli.main pet --status
+  run env HERMES_HOME="${MINIMAL_SMOKE_DIR}/home" \
+    "${MINIMAL_SMOKE_DIR}/venv/bin/python3" -m hermes_cli.main pet --share-current
 fi
 
 if [ -x "$SWIFTC" ]; then

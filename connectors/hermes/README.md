@@ -21,8 +21,8 @@ in the default user path.
 
 The repository still includes in-Hermes hooks used to prove the MVP behavior.
 Those hooks are treated as development shims. The productized Hermes connector
-should converge on wrappers and stable relay env vars so Hermes can update
-without merge conflicts.
+should converge on wrappers and stable local environment contracts so Hermes can
+update without merge conflicts.
 
 ## Install
 
@@ -55,14 +55,16 @@ By default the installer only writes the standard paths above. Custom paths
 require `HERMES_PET_ALLOW_CUSTOM_INSTALL=1`, and destructive targets such as
 `$HOME`, `/`, `/tmp`, or paths not ending in `hermes-pet` are rejected.
 Fresh clones bootstrap `venv/` automatically unless `--no-bootstrap` is passed.
-Production bootstrap uses a normal `pip install .`; set
-`HERMES_PET_EDITABLE_INSTALL=1` only for local development.
-The macOS MVP installer does not require private-network relay, chat-relay, or
-third-party terminal tools. cmux is optional and only used when the user selects
-it as a local terminal launcher. The Python bootstrap installs the repository's
-base Hermes Agent runtime package so CLI/TUI sessions launched from the pet have
-the same pet hooks as the desktop overlay; optional extras such as messaging,
-web dashboard, voice, or platform connectors are not installed by this connector.
+Production bootstrap installs only `PyYAML>=6.0.2,<7` and
+`python-dotenv>=1.2.1,<2`, which are the Python packages required by the local
+desktop pet runtime path. Pass `--full-hermes` only when this checkout should
+also install the full base Hermes Agent package for local CLI/TUI sessions;
+set `HERMES_PET_EDITABLE_INSTALL=1` only for local development with
+`--full-hermes`.
+The macOS MVP installer does not require network forwarding, chat integration,
+or third-party terminal tools. cmux is optional and only used when the user
+selects it as a local terminal launcher. Optional extras such as messaging, web
+dashboard, voice, or platform connectors are not installed by this connector.
 
 Verify:
 
