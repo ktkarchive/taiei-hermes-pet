@@ -113,7 +113,11 @@ else
   exit 1
 fi
 
-bash "${INSTALL_DIR}/connectors/hermes/install.sh" "${INSTALL_ARGS[@]}"
+if [ "${#INSTALL_ARGS[@]}" -gt 0 ]; then
+  bash "${INSTALL_DIR}/connectors/hermes/install.sh" "${INSTALL_ARGS[@]}"
+else
+  bash "${INSTALL_DIR}/connectors/hermes/install.sh"
+fi
 
 if [ "$START_PET" -eq 1 ]; then
   "${BIN_DIR}/hermes-pet" --background --port "$PORT"
