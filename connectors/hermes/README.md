@@ -29,9 +29,13 @@ without merge conflicts.
 One-command public install on macOS:
 
 ```bash
-INSTALLER=/tmp/hermes-pet-install-from-git.sh
-curl -fsSL https://raw.githubusercontent.com/ktkarchive/taiei-hermes-pet/main/connectors/hermes/install-from-git.sh -o "$INSTALLER"
-bash "$INSTALLER"
+INSTALL_DIR="$HOME/.hermes/pet/taiei-hermes-pet"
+if [ -d "$INSTALL_DIR/.git" ]; then
+  git -C "$INSTALL_DIR" pull --ff-only origin main
+else
+  git clone https://github.com/ktkarchive/taiei-hermes-pet.git "$INSTALL_DIR"
+fi
+bash "$INSTALL_DIR/connectors/hermes/install-from-git.sh"
 ```
 
 From this repository:
